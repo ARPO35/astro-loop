@@ -406,7 +406,7 @@ class CrystalRenderer {
     ) {
         if (state.timeCrystalPhase == GameState.TimeCrystalPhase.NONE) return
 
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
         val orbPulse = 0.7f + 0.3f * sin(time * 4f)
 
         val sx = state.timeCrystalX - cameraX

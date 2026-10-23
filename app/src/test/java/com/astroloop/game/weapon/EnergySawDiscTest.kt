@@ -39,11 +39,11 @@ class EnergySawDiscTest {
 
     @Test
     fun `disc radius scales with level`() {
-        assertEquals(20f, EnergySaw().also { it.level = 1 }.discRadius, 0.001f)
-        assertEquals(28f, EnergySaw().also { it.level = 2 }.discRadius, 0.001f)
-        assertEquals(36f, EnergySaw().also { it.level = 3 }.discRadius, 0.001f)
-        assertEquals(45f, EnergySaw().also { it.level = 4 }.discRadius, 0.001f)
-        assertEquals(55f, EnergySaw().also { it.level = 5 }.discRadius, 0.001f)
+        assertEquals(28f, EnergySaw().also { it.level = 1 }.discRadius, 0.001f)
+        assertEquals(36f, EnergySaw().also { it.level = 2 }.discRadius, 0.001f)
+        assertEquals(44f, EnergySaw().also { it.level = 3 }.discRadius, 0.001f)
+        assertEquals(53f, EnergySaw().also { it.level = 4 }.discRadius, 0.001f)
+        assertEquals(75f, EnergySaw().also { it.level = 5 }.discRadius, 0.001f)
     }
 
     @Test

@@ -70,7 +70,7 @@ class WeaponFireRateTest {
         assertEquals(0L, w.beatPhaseOffsetMs)
     }
 
-    // ── ScatterShot: 1.0s / 10 dmg / phase 500 ─────────────────
+    // ── ScatterShot: 1.0s / 14 dmg / phase 500 ─────────────────
 
     @Test
     fun `ScatterShot baseCooldown is 1_0`() {
@@ -79,9 +79,9 @@ class WeaponFireRateTest {
     }
 
     @Test
-    fun `ScatterShot baseDamage is 10`() {
+    fun `ScatterShot baseDamage is 14`() {
         val w = ScatterShot()
-        assertEquals(10f, w.baseDamage, 0.001f)
+        assertEquals(14f, w.baseDamage, 0.001f)
     }
 
     @Test
@@ -110,18 +110,18 @@ class WeaponFireRateTest {
         assertEquals(250L, w.beatPhaseOffsetMs)
     }
 
-    // ── Railgun: 1.5s / 80 dmg / phase 0 ──────────────────────
+    // ── Railgun: 1.0s / 100 dmg / phase 0 ──────────────────────
 
     @Test
-    fun `Railgun baseCooldown is 1_5`() {
+    fun `Railgun baseCooldown is 1_0`() {
         val w = Railgun()
-        assertEquals(1.5f, w.baseCooldown, 0.001f)
+        assertEquals(1.0f, w.baseCooldown, 0.001f)
     }
 
     @Test
-    fun `Railgun baseDamage is 80`() {
+    fun `Railgun baseDamage is 100`() {
         val w = Railgun()
-        assertEquals(80f, w.baseDamage, 0.001f)
+        assertEquals(100f, w.baseDamage, 0.001f)
     }
 
     @Test
@@ -130,7 +130,7 @@ class WeaponFireRateTest {
         assertEquals(0L, w.beatPhaseOffsetMs)
     }
 
-    // ── SolarStorm: 2.0s / 29 dmg / phase 500 ──────────────────
+    // ── SolarStorm: 2.0s / 40 dmg / phase 500 ──────────────────
 
     @Test
     fun `SolarStorm baseCooldown is 2_0`() {
@@ -139,9 +139,9 @@ class WeaponFireRateTest {
     }
 
     @Test
-    fun `SolarStorm baseDamage is 29`() {
+    fun `SolarStorm baseDamage is 40`() {
         val w = SolarStorm()
-        assertEquals(29f, w.baseDamage, 0.001f)
+        assertEquals(40f, w.baseDamage, 0.001f)
     }
 
     @Test
@@ -190,7 +190,7 @@ class WeaponFireRateTest {
         assertEquals(1500L, w.beatPhaseOffsetMs)
     }
 
-    // ── IonOrbiters: 4.0s / 19 dmg / phase 0 ───────────────────
+    // ── IonOrbiters: 4.0s / 20 dmg / phase 0 ───────────────────
 
     @Test
     fun `IonOrbiters baseCooldown is 4_0`() {
@@ -199,9 +199,9 @@ class WeaponFireRateTest {
     }
 
     @Test
-    fun `IonOrbiters baseDamage is 19`() {
+    fun `IonOrbiters baseDamage is 20`() {
         val w = IonOrbiters()
-        assertEquals(19f, w.baseDamage, 0.001f)
+        assertEquals(20f, w.baseDamage, 0.001f)
     }
 
     @Test
@@ -233,14 +233,14 @@ class WeaponFireRateTest {
     // ── baseProjectileCount spec anchors ────────────────────────
 
     @Test fun `PulseCannon baseProjectileCount is 1`() = assertEquals(1, PulseCannon().baseProjectileCount)
-    @Test fun `ScatterShot baseProjectileCount is 5`() = assertEquals(5, ScatterShot().baseProjectileCount)
-    @Test fun `NeedleGun baseProjectileCount is 3`() = assertEquals(3, NeedleGun().baseProjectileCount)
+    @Test fun `ScatterShot baseProjectileCount is 8`() = assertEquals(8, ScatterShot().baseProjectileCount)
+    @Test fun `NeedleGun baseProjectileCount is 1`() = assertEquals(1, NeedleGun().baseProjectileCount)
     @Test fun `HomingMissiles baseProjectileCount is 1`() = assertEquals(1, HomingMissiles().baseProjectileCount)
 
     // ── evolution baseProjectileCount — no regression vs base L5 ─
 
-    @Test fun `LeechBurst baseProjectileCount is 13`() =
-        assertEquals(13, LeechBurst().baseProjectileCount)
+    @Test fun `LeechBurst baseProjectileCount is 20`() =
+        assertEquals(20, LeechBurst().baseProjectileCount)
     @Test fun `AutonomousAce baseProjectileCount is 5`() =
         assertEquals(5, AutonomousAce().baseProjectileCount)
     @Test fun `JackpotMines baseProjectileCount is 3`() =

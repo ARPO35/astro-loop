@@ -36,11 +36,11 @@ class VampiricLeecherSystemTest {
         }
     }
 
-    // Edge dist = 50 - 30 = 20 ≤ 100 → in range
+    // Edge dist = 50 - 30 = 20 ≤ 60 → in range at one stack
     private fun inRangeAsteroid() = asteroidAt(150f, 100f)
 
-    // Edge dist = 135 - 30 = 105 > 100 → out of range (LEECH_RANGE = 100f)
-    private fun outOfRangeAsteroid() = asteroidAt(235f, 100f)
+    // Edge dist = 185 - 30 = 155 > 140 → out of range even at five stacks
+    private fun outOfRangeAsteroid() = asteroidAt(285f, 100f)
 
     // ── Damage / heal behavior (unchanged) ──────────────────────────────────
 
@@ -63,32 +63,42 @@ class VampiricLeecherSystemTest {
 
     @Test
     fun `tick heals ship and damages asteroid when in range`() {
-        state.addPassive("vampiric_core")  // stacks = 1, leech = 0.1
+        state.addPassive("vampiric_core")  // stacks = 1, leech = 0.2
         val asteroid = inRangeAsteroid()
         system.update(ship, listOf(asteroid), state, 0.21f)  // past 0.2s interval
-        assertEquals(50.1f, ship.health, 0.001f)
-        assertEquals(49.9f, asteroid.health, 0.001f)
+        assertEquals(50.2f, ship.health, 0.001f)
+        assertEquals(49.8f, asteroid.health, 0.001f)
     }
 
     @Test
-    fun `two stacks doubles leech per tick`() {
+    fun `more stacks reach further but drain no harder`() {
+        // Edge dist = 105 - 30 = 75: past 60 (one stack), inside 80 (two stacks)
+        val asteroid = asteroidAt(205f, 100f)
+
         state.addPassive("vampiric_core")
-        state.addPassive("vampiric_core")  // stacks = 2, leech = 0.2
-        val asteroid = inRangeAsteroid()
+        system.update(ship, listOf(asteroid), state, 0.21f)
+        assertEquals("one stack: out of reach", 50f, ship.health, 0.001f)
+
+        state.addPassive("vampiric_core")
         system.update(ship, listOf(asteroid), state, 0.21f)
         assertEquals(50.2f, ship.health, 0.001f)
         assertEquals(49.8f, asteroid.health, 0.001f)
     }
 
     @Test
+    fun `range runs 60 to 140 over five stacks`() {
+        assertEquals(listOf(60f, 80f, 100f, 120f, 140f), (1..5).map { VampiricLeecherSystem.rangeFor(it) })
+    }
+
+    @Test
     fun `multiple asteroids in range all contribute heal`() {
-        state.addPassive("vampiric_core")  // leech = 0.1 per asteroid
+        state.addPassive("vampiric_core")  // leech = 0.2 per asteroid
         val a1 = inRangeAsteroid()
-        val a2 = asteroidAt(100f, 150f, r = 30f)  // edge dist = 50-30 = 20 ≤ 100
+        val a2 = asteroidAt(100f, 150f, r = 30f)  // edge dist = 50-30 = 20 ≤ 60
         system.update(ship, listOf(a1, a2), state, 0.21f)
-        assertEquals(50.2f, ship.health, 0.001f)
-        assertEquals(49.9f, a1.health, 0.001f)
-        assertEquals(49.9f, a2.health, 0.001f)
+        assertEquals(50.4f, ship.health, 0.001f)
+        assertEquals(49.8f, a1.health, 0.001f)
+        assertEquals(49.8f, a2.health, 0.001f)
     }
 
     @Test

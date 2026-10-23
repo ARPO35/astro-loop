@@ -33,7 +33,7 @@ class VampiricTargetCapTest {
         system = VampiricLeecherSystem { destroyed.add(it) }
     }
 
-    /** [count] asteroids ringed around the ship, all comfortably inside LEECH_RANGE. */
+    /** [count] asteroids ringed around the ship, all comfortably inside the one-stack range. */
     private fun ring(count: Int): List<Asteroid> = (0 until count).map { i ->
         val a = EntityPools.asteroids.obtain()
         // Ordered by distance: index 0 nearest.
@@ -83,7 +83,7 @@ class VampiricTargetCapTest {
         val before = ship.health
         system.update(ship, asteroids, state, VampiricLeecherSystem.TICK_INTERVAL)
 
-        val expected = VampiricLeecherSystem.LEECH_PER_STACK * 1 * 6
+        val expected = VampiricLeecherSystem.LEECH * 6
         assertEquals("heal must match six targets, not twelve",
             before + expected, ship.health, 0.0001f)
     }

@@ -229,7 +229,7 @@ class WeaponDefinitionsTest {
         val def = WeaponDefinitions.getWeaponDef("cluster_bomb")!!
         assertEquals(
             listOf(
-                "2 bomblets",
+                "3 bomblets",
                 "+1 bomblet",
                 "+1 bomblet",
                 "+1 bomblet",

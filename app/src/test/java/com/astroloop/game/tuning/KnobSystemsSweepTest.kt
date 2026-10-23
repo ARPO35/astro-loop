@@ -95,7 +95,7 @@ class KnobSystemsSweepTest {
             repeat(4) { weapons.addWeapon(id, state) }
         }
         val effects = VisualEffectManager()
-        val saws = SawDamageSystem(state, ship, weapons, effects, { it to false }, {}, {}, {})
+        val saws = SawDamageSystem(state, ship, weapons, effects, { it to false }, {}, {})
         val beam = BeamDamageSystem(state, ship, weapons, { _, _, _, _, _ -> }, { _, _, _, _ -> }, { it to false }, {}, {}, {})
         val leech = VampiricLeecherSystem { it.isActive = false }
         val drones = CombatDroneSystem(state, ship)

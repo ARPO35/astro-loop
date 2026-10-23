@@ -16,14 +16,14 @@ class WeaponProbeTest {
     @Test
     fun `base weapons fire what their code says at each level`() {
         assertEquals(listOf(1, 2, 3, 4, 5), perLevel("pulse_cannon"))
-        assertEquals(listOf(5, 7, 9, 11, 13), perLevel("scatter_shot"))
+        assertEquals(listOf(8, 11, 14, 17, 20), perLevel("scatter_shot"))
         assertEquals(listOf(1, 2, 3, 4, 5), perLevel("homing_missiles"))
         assertEquals(listOf(2, 3, 4, 5, 6), perLevel("ion_orbiters"))
         assertEquals(listOf(1, 1, 1, 1, 1), perLevel("railgun"))
         assertEquals(listOf(1, 1, 2, 2, 3), perLevel("space_mines"))
         assertEquals(listOf(1, 2, 3, 4, 5), perLevel("solar_storm"))
         assertEquals(listOf(8, 8, 8, 8, 8), perLevel("nova_blast"))
-        assertEquals(listOf(3, 4, 5, 6, 7), perLevel("needle_gun"))
+        assertEquals(listOf(1, 2, 3, 4, 5), perLevel("needle_gun"))
         assertEquals(listOf(1, 1, 1, 1, 1), perLevel("cluster_bomb"))
         assertEquals(listOf(1, 2, 3, 4, 5), perLevel("flak_cannon"))
         assertEquals(listOf(0, 0, 0, 0, 0), perLevel("energy_saw"))
@@ -43,9 +43,9 @@ class WeaponProbeTest {
     @Test
     fun `evolutions fire their hidden level-five count`() {
         val expect = mapOf(
-            "storm_cannon" to (6 to 7), "leech_burst" to (16 to 17), "siphon_needles" to (10 to 11),
-            "flak_barrage" to (8 to 9), "autonomous_ace" to (5 to 6), "jackpot_mines" to (3 to 4),
-            "frost_ring" to (18 to 19), "phoenix_flare" to (24 to 24), "lingering_nova" to (16 to 16),
+            "storm_cannon" to (6 to 7), "leech_burst" to (20 to 21), "siphon_needles" to (7 to 8),  // these two fire their count knob
+            "flak_barrage" to (5 to 6),  // fires its count knob: no hidden bonus "autonomous_ace" to (5 to 6), "jackpot_mines" to (3 to 4),
+            "frost_ring" to (14 to 15), "phoenix_flare" to (24 to 24), "lingering_nova" to (16 to 16),
             "hunter_killer" to (1 to 2), "warp_saw" to (0 to 0), "oblivion_beam" to (0 to 0),
         )
         for ((id, counts) in expect) {
@@ -68,7 +68,7 @@ class WeaponProbeTest {
 
     @Test
     fun `bomblets per level`() {
-        assertEquals(listOf(2, 3, 4, 5, 6), (1..5).map { WeaponProbe.bomblets("cluster_bomb", it) })
+        assertEquals(listOf(3, 4, 5, 6, 7), (1..5).map { WeaponProbe.bomblets("cluster_bomb", it) })
         assertEquals(7, WeaponProbe.bomblets("hunter_killer", 5))
         assertNull(WeaponProbe.bomblets("pulse_cannon", 1))
     }
@@ -95,7 +95,7 @@ class WeaponProbeTest {
     fun `a knob edit forgets what was remembered`() {
         assertEquals(6, WeaponProbe.fired("storm_cannon", 5))
         assertEquals(27.9f, WeaponProbe.damage("storm_cannon", 5), 0.001f)
-        assertEquals(6, WeaponProbe.bomblets("cluster_bomb", 5))
+        assertEquals(7, WeaponProbe.bomblets("cluster_bomb", 5))
         val runs = WeaponProbe.probeRuns
         Tunables.set(KnobsWeapons.stormCannon.count!!, 5f)
         assertEquals(8, WeaponProbe.fired("storm_cannon", 5))

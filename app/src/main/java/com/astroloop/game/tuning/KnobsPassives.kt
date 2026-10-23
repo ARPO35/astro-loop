@@ -14,7 +14,7 @@ import com.astroloop.game.system.VampiricLeecherSystem
  */
 object KnobsPassives {
     private val nano = KnobGroup("Passives/Nano Repair", "nano_repair")
-    val nanoRegenPerStack = nano.float("regen_per_stack", "Regen per stack (HP/s)", 0.4f, applies = Applies.ON_EDITOR_CLOSE)
+    val nanoRegenPerStack = nano.float("regen_per_stack", "Regen per stack (HP/s)", 0.3f, applies = Applies.ON_EDITOR_CLOSE)
 
     private val duplicator = KnobGroup("Passives/Duplicator Core", "duplicator_core")
     val duplicatorExtraProjectiles = duplicator.int("extra_projectiles", "Extra projectiles", 1, min = 0, max = 10, applies = Applies.ON_EDITOR_CLOSE)
@@ -26,10 +26,13 @@ object KnobsPassives {
     val phoenixExtraLives = phoenix.int("extra_lives", "Extra lives", 1, min = 0, max = 5, applies = Applies.ON_EDITOR_CLOSE)
 
     private val momentum = KnobGroup("Passives/Momentum Drive", "momentum_drive")
-    val momentumDamagePerStack = momentum.float("damage_per_stack", "Damage + per stack while moving", 0.08f, applies = Applies.ON_EDITOR_CLOSE)
+    val momentumDamagePerStack = momentum.float("damage_per_stack", "Damage + per stack while moving", 0.15f, applies = Applies.ON_EDITOR_CLOSE)
 
     private val cryo = KnobGroup("Passives/Cryo Field", "cryo_field")
-    val cryoSlow = cryo.float("slow", "Slow (flat)", 0.5f, min = 0f, max = 0.9f, applies = Applies.ON_EDITOR_CLOSE)
+    // Replaced `cryo_field.slow` (a flat 0.35) in 1.5: the slow now deepens towards the ship (#57).
+    // 0.9 (was 0.75 when the gradient landed): the owner's buff, 2026-10-22.
+    val cryoCentreSlow = cryo.float("centre_slow", "Slow at the ship's centre (0 at the edge)", 0.9f, min = 0f, max = 0.9f, applies = Applies.ON_EDITOR_CLOSE)
+    val cryoCurve = cryo.float("curve", "Slow curve (1 even, below 1 sooner, above 1 later)", 1f, min = 0.25f, max = 4f)
     val cryoRadiusPerStack = cryo.float("radius_per_stack", "Radius + per stack", 0.25f, applies = Applies.ON_EDITOR_CLOSE)
     val cryoBaseRadius = cryo.float("base_radius", "Base radius", GameConfig.CRYO_BASE_RADIUS)
 
@@ -40,16 +43,18 @@ object KnobsPassives {
     val revengeSecondsPerStack = revenge.float("seconds_per_stack", "Burst seconds per stack", 2f)
 
     private val vampiric = KnobGroup("Passives/Vampiric Core", "vampiric_core")
-    val vampiricLeechPerStack = vampiric.float("leech_per_stack", "Leech per stack per tick (HP)", VampiricLeecherSystem.LEECH_PER_STACK)
+    // 1.5: `leech_per_stack` and the flat `range` became a flat leech and a range that grows per stack.
+    val vampiricLeech = vampiric.float("leech", "Leech per asteroid per tick (HP)", VampiricLeecherSystem.LEECH)
     val vampiricTick = vampiric.float("tick", "Tick (s)", VampiricLeecherSystem.TICK_INTERVAL)
-    val vampiricRange = vampiric.float("range", "Range from asteroid edge", VampiricLeecherSystem.LEECH_RANGE)
+    val vampiricBaseRange = vampiric.float("base_range", "Range at 1 stack (from asteroid edge)", VampiricLeecherSystem.BASE_RANGE)
+    val vampiricRangePerStack = vampiric.float("range_per_stack", "Range + per stack", VampiricLeecherSystem.RANGE_PER_STACK, min = 0f, max = 200f)
     val vampiricMaxTargets = vampiric.int("max_targets", "Max asteroids drained", VampiricLeecherSystem.MAX_TARGETS, max = 30)
 
     private val glass = KnobGroup("Passives/Glass Cannon", "glass_cannon")
     val glassDamageBonus = glass.float("damage_bonus", "Damage +", 1f, applies = Applies.ON_EDITOR_CLOSE)
 
     private val drone = KnobGroup("Passives/Combat Drone", "drone")
-    val droneDamage = drone.float("damage", "Bullet damage", 5f)
+    val droneDamage = drone.float("damage", "Bullet damage", 8f)
     val droneSpeed = drone.float("speed", "Bullet speed", 450f, min = 100f, max = 1800f)
     /** Shots per second. The drone was never on the beat grid; this keeps it where it was. */
     val droneFireRate = drone.float("fire_rate", "Shots per second", Drone.DEFAULT_FIRE_RATE)

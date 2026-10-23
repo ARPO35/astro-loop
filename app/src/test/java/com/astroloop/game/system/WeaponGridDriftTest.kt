@@ -70,10 +70,10 @@ class WeaponGridDriftTest {
     }
 
     @Test
-    fun `railgun on its dotted grid for a minute`() {
+    fun `railgun on its half-note grid for a minute`() {
         val t = fireTimes("railgun", 60)
-        assertOnGrid("railgun", t, 1500.0, 0.0)
-        assertRate("railgun", t, 1500.0, 60)
+        assertOnGrid("railgun", t, 1000.0, 0.0)
+        assertRate("railgun", t, 1000.0, 60)
     }
 
     @Test

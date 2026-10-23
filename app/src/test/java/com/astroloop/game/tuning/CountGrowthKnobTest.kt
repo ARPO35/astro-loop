@@ -29,7 +29,7 @@ class CountGrowthKnobTest {
     @Test
     fun `needle growth scales per level`() {
         Tunables.set(KnobsWeapons.needleCountGrowth, 2f)
-        assertEquals(7, counts("needle_gun", 3..3)[0])
+        assertEquals(5, counts("needle_gun", 3..3)[0])   // 1 at L1 + 2 per level
     }
 
     @Test

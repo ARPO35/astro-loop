@@ -62,6 +62,6 @@ class WeaponKnobsTest {
         val state = GameState().also { it.reset() }
         Tunables.set(KnobsWeapons.flakCannon.area!!, 2f)
         val flak = GoldenSnapshot.exerciseWeapon("flak_cannon", 1, state)
-        assertEquals(120f, flak.first().explosionRadius)
+        assertEquals(170f, flak.first().explosionRadius)   // 85 × 2
     }
 }

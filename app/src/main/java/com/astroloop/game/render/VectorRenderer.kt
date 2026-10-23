@@ -108,7 +108,7 @@ class VectorRenderer(
 
             // Laser sight line to target (pulsing)
             if (afterimage.hasTarget && afterimage.aiming) {
-                val laserTime = (System.currentTimeMillis() % 10000L) / 1000f
+                val laserTime = AnimClock.seconds()
                 val pulse = (sin(laserTime * 10.0) * 0.3 + 0.7).toFloat()
                 val laserAlpha = pulse * (afterimage.timer / 3f).coerceIn(0f, 1f)
                 val laserColor = Boss.CORRUPTION_COLOR
@@ -130,7 +130,7 @@ class VectorRenderer(
         // Emergency shield — pulsing retreat aura (same visual as crystal, white-hot ring only)
         if (state.emergencyShieldActive && ship.isActive) {
             val shieldRadius = 60f
-            val time = (System.currentTimeMillis() % 10000L) / 1000f
+            val time = AnimClock.seconds()
             val pulse = 0.6f + 0.4f * sin(time * 4f).toFloat()
 
             shapeRenderer.setColor(CrystalPalette.MID)
@@ -150,7 +150,7 @@ class VectorRenderer(
         // Crystal energy shield — pulsing damage aura
         if (state.hasCrystalPowers && ship.isActive) {
             val shieldRadius = 60f
-            val time = (System.currentTimeMillis() % 10000L) / 1000f
+            val time = AnimClock.seconds()
             val pulse = 0.6f + 0.4f * sin(time * 4f).toFloat()
 
             // Outer glow ring (icy cyan)
@@ -178,7 +178,7 @@ class VectorRenderer(
         // Draw thrust effect first (behind ship) — skip when stunned, crystal powers use boss engine glow
         if (!state.playerStunned) {
             if (state.hasCrystalPowers) {
-                val time = (System.currentTimeMillis() % 10000L) / 1000f
+                val time = AnimClock.seconds()
                 val pulse = 0.5f + 0.5f * sin(time * 6f).toFloat()
                 val engineX = ship.position.x + cos(ship.rotation + PI.toFloat()) * ship.radius * 0.5f
                 val engineY = ship.position.y + sin(ship.rotation + PI.toFloat()) * ship.radius * 0.5f
@@ -277,8 +277,7 @@ class VectorRenderer(
         val fade = state.effectRingFadeAlpha
         if (fade <= 0f) return
 
-        val timeSeconds = (System.currentTimeMillis() % 10000L) / 1000f
-        val alpha = EffectRings.alpha(timeSeconds, fade)
+        val alpha = EffectRings.alpha(fade)
         if (alpha <= 0f) return
 
         shapeRenderer.setStrokeWidth(EffectRings.STROKE_WIDTH)
@@ -576,6 +575,18 @@ class VectorRenderer(
     fun renderProjectile(canvas: Canvas, projectile: Projectile) {
         if (!projectile.isActive) return
 
+        // Force-faded shots (boss spawn, boss rails, EMP #2) fade out over their last 0.5 s.
+        // Orbiters apply fadeAlpha themselves.
+        val scaled = projectile.shouldFadeOut && projectile.type != ProjectileType.ORBITER
+        if (scaled) shapeRenderer.alphaScale = projectile.fadeAlpha
+        try {
+            renderProjectileBody(canvas, projectile)
+        } finally {
+            if (scaled) shapeRenderer.alphaScale = 1f
+        }
+    }
+
+    private fun renderProjectileBody(canvas: Canvas, projectile: Projectile) {
         shapeRenderer.setColor(projectile.color)
 
         when (projectile.type) {
@@ -1171,7 +1182,7 @@ class VectorRenderer(
         val baseY2 = pointerY - sin(angle) * triSize * 0.3f - sin(perpAngle) * triSize * 0.5f
 
         // Pulsing alpha
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
         val pulse = 0.6f + 0.4f * sin(time * 4f).toFloat()
 
         shapeRenderer.setColor(color)
@@ -1606,8 +1617,8 @@ class VectorRenderer(
 
         // Fleet shield visual — pulsing cyan barrier while shielded
         if (boss.shielded) {
-            val time = (System.currentTimeMillis() % 10000L) / 1000f
-            val shieldPulse = 0.15f + 0.05f * sin(time * 3f)
+            val time = AnimClock.seconds()
+            val shieldPulse = (0.15 + 0.05 * sin(time * 3.0)).toFloat()
             shapeRenderer.setColor(CrystalPalette.MID)
             shapeRenderer.setStrokeWidth(1.5f)
             shapeRenderer.setAlpha(shieldPulse)
@@ -1633,7 +1644,7 @@ class VectorRenderer(
         // Energy shield aura (mirrors corrupted Astro crystal powers)
         if (!boss.isStunned) {
             val shieldRadius = Boss.SHIELD_DEFLECT_RADIUS  // shots fizzle on this same ring
-            val time = (System.currentTimeMillis() % 10000L) / 1000f
+            val time = AnimClock.seconds()
             val pulse = 0.6f + 0.4f * sin(time * 4f).toFloat()
 
             // Outer glow ring (icy cyan)
@@ -1739,7 +1750,7 @@ class VectorRenderer(
         val cx = boss.position.x
         val cy = boss.position.y
         val rot = boss.rotation
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
 
         val barrelTipX = cx + cos(rot) * Boss.BOSS_SIZE * 1.2f
         val barrelTipY = cy + sin(rot) * Boss.BOSS_SIZE * 1.2f
@@ -1764,10 +1775,10 @@ class VectorRenderer(
         shapeRenderer.setColor(mainColor)
         shapeRenderer.setStrokeWidth(1.2f)
         for (i in 0 until 5) {
-            val baseAngle = (i.toFloat() / 5f) * 2f * PI.toFloat() + time * spinRate
+            val baseAngle = (i.toFloat() / 5f) * 2f * PI.toFloat() + ((time * spinRate) % (2 * PI)).toFloat()
             val fromX = barrelTipX + cos(baseAngle) * tendrilRadius
             val fromY = barrelTipY + sin(baseAngle) * tendrilRadius
-            shapeRenderer.setAlpha(tendrilAlpha * (0.6f + 0.4f * abs(sin(time * 3.2f + i))))
+            shapeRenderer.setAlpha(tendrilAlpha * (0.6f + 0.4f * abs(sin(time * 3.2 + i)).toFloat()))
             shapeRenderer.drawLine(canvas, fromX, fromY, barrelTipX, barrelTipY)
         }
         shapeRenderer.setAlpha(1f)
@@ -1814,8 +1825,8 @@ class VectorRenderer(
 
         // Pulsing cyan barrier
         if (boss.shielded) {
-            val time = (System.currentTimeMillis() % 10000L) / 1000f
-            val shieldPulse = 0.15f + 0.05f * sin(time * 3f)
+            val time = AnimClock.seconds()
+            val shieldPulse = (0.15 + 0.05 * sin(time * 3.0)).toFloat()
             shapeRenderer.setColor(CrystalPalette.MID)
             shapeRenderer.setStrokeWidth(1.5f)
             shapeRenderer.setAlpha(shieldPulse)
@@ -1938,9 +1949,8 @@ class VectorRenderer(
         val ay = shipY + kotlin.math.sin(rotation) * shipRadius
         val bx = ax + kotlin.math.cos(rotation) * BeamDamageSystem.BEAM_LENGTH
         val by = ay + kotlin.math.sin(rotation) * BeamDamageSystem.BEAM_LENGTH
-        // NOTE: %10000L keeps the float small enough for sin() precision — the raw millisecond
-        // clock is around 1.7e12 and loses its fractional part entirely once cast to Float.
-        val t = (System.currentTimeMillis() % 10000L) / 1000f
+        // AnimClock, not raw millis: the millisecond clock (~1.7e12) loses all precision as a Float.
+        val t = AnimClock.seconds()
         val pulse = 0.85f + 0.15f * kotlin.math.sin(t * 12f)
 
         beamPaint.color = color

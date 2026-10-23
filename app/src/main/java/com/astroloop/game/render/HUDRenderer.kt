@@ -445,7 +445,7 @@ class HUDRenderer {
             val waveStartX = barStartX + 16f
             val waveEndX = barStartX + barWidth - 16f
             val waveWidth = waveEndX - waveStartX
-            val time = (System.currentTimeMillis() % 100000L) / 1000f
+            val time = AnimClock.seconds()
 
             val maxAmplitude = (chatterHeight / 2f) - 4f
             val segments = 60
@@ -455,7 +455,7 @@ class HUDRenderer {
                 val t = i.toFloat() / segments
                 val x = waveStartX + waveWidth * t
                 val envelope = sin(t * PI.toFloat())  // Envelope: peaks in middle
-                val y = waveY + maxAmplitude * envelope * sin(t * 10f * 2f * PI.toFloat() + time * 6f)
+                val y = waveY + maxAmplitude * envelope * sin(t * 10f * 2f * PI + time * 6.0).toFloat()
                 canvas.drawLine(prevX, prevWaveY, x, y, radioWavePaint)
                 prevX = x
                 prevWaveY = y
@@ -731,7 +731,7 @@ class HUDRenderer {
             val waveStartX = barStartX + 16f
             val waveEndX = barStartX + barWidth - 16f
             val waveWidth = waveEndX - waveStartX
-            val time = (System.currentTimeMillis() % 100000L) / 1000f
+            val time = AnimClock.seconds()
 
             val maxAmplitude = (chatterHeight / 2f) - 4f
             val segments = 60
@@ -741,7 +741,7 @@ class HUDRenderer {
                 val t = i.toFloat() / segments
                 val x = waveStartX + waveWidth * t
                 val envelope = sin(t * PI.toFloat())
-                val y = waveY + maxAmplitude * envelope * sin(t * 10f * 2f * PI.toFloat() + time * 6f)
+                val y = waveY + maxAmplitude * envelope * sin(t * 10f * 2f * PI + time * 6.0).toFloat()
                 canvas.drawLine(prevX, prevWaveY, x, y, radioWavePaint)
                 prevX = x
                 prevWaveY = y

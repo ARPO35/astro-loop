@@ -26,14 +26,26 @@ class ShapeRenderer {
         paint.strokeWidth = width
     }
 
+    /**
+     * Global opacity multiplier applied by [setColor] and [setAlpha] (a fading projectile scales
+     * every colour and alpha it sets). Callers reset it to 1f when done.
+     */
+    var alphaScale: Float = 1f
+
     fun setColor(color: Int) {
         paint.color = color
         fillPaint.color = color
+        if (alphaScale < 1f) {
+            val a = ((color ushr 24) * alphaScale).toInt().coerceIn(0, 255)
+            paint.alpha = a
+            fillPaint.alpha = a
+        }
     }
 
     fun setAlpha(alpha: Float) {
-        paint.alpha = (alpha * 255).toInt().coerceIn(0, 255)
-        fillPaint.alpha = (alpha * 255).toInt().coerceIn(0, 255)
+        val a = (alpha * alphaScale * 255).toInt().coerceIn(0, 255)
+        paint.alpha = a
+        fillPaint.alpha = a
     }
 
     fun drawLine(canvas: Canvas, x1: Float, y1: Float, x2: Float, y2: Float) {

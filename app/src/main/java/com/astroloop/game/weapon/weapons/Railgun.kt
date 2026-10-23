@@ -8,6 +8,7 @@ import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.tuning.KnobsWeapons
 import com.astroloop.game.tuning.forLevel
+import kotlin.math.PI
 
 class Railgun : Weapon(
     id = "railgun",
@@ -43,9 +44,15 @@ class Railgun : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
+        // Slugs alternate front, back, front…: with Duplicator Core's second slug, one flies straight
+        // ahead and one straight behind (owner, 2026-10-20). Lab counts above two fan each side as before.
+        val frontCount = count - count / 2
+        val backCount = count / 2
         for (i in 0 until count) {
-            val offsetAngle = (i - (count - 1) / 2f) * 0.15f
-            val angle = firer.rotation + offsetAngle
+            val isBack = i % 2 == 1
+            val sideCount = if (isBack) backCount else frontCount
+            val offsetAngle = (i / 2 - (sideCount - 1) / 2f) * 0.15f
+            val angle = firer.rotation + offsetAngle + if (isBack) PI.toFloat() else 0f
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

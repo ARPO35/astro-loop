@@ -30,8 +30,8 @@ class EffectiveLineTest {
     @Test
     fun `the run's level is highlighted`() {
         val line = EffectiveLine.forKnob(KnobsWeapons.scatterShot.count!!, runLevel = 3)!!
-        assertEquals("Fires per level: 5 · 7 · 9 · 11 · 13 (+1 with Duplicator)", line.text)
-        assertEquals("9", line.text.substring(line.highlight!!))
+        assertEquals("Fires per level: 8 · 11 · 14 · 17 · 20 (+1 with Duplicator)", line.text)
+        assertEquals("14", line.text.substring(line.highlight!!))
     }
 
     @Test
@@ -54,7 +54,7 @@ class EffectiveLineTest {
     fun `target-limited, bomblet and count-less weapons`() {
         assertEquals("Strikes per level, up to: 1 · 2 · 3 · 4 · 5",
             EffectiveLine.forKnob(KnobsWeapons.solarStorm.count!!, null)!!.text)
-        assertEquals("Fires per level: 1 · 1 · 1 · 1 · 1 (+1 with Duplicator) · bomblets 2 · 3 · 4 · 5 · 6",
+        assertEquals("Fires per level: 1 · 1 · 1 · 1 · 1 (+1 with Duplicator) · bomblets 3 · 4 · 5 · 6 · 7",
             EffectiveLine.forKnob(KnobsWeapons.clusterBomb.count!!, null)!!.text)
         assertEquals("Fires per level: 8 · 8 · 8 · 8 · 8",
             EffectiveLine.forKnob(KnobsWeapons.novaBlast.damage, null)!!.text)

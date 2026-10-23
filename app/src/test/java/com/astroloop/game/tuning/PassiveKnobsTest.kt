@@ -18,7 +18,7 @@ class PassiveKnobsTest {
             assertEquals(2f, revengeSecondsPerStack.value)
             assertEquals(0.2f, vampiricTick.value)
             assertEquals(6, vampiricMaxTargets.value)
-            assertEquals(5f, droneDamage.value)
+            assertEquals(8f, droneDamage.value)
             assertEquals(450f, droneSpeed.value)
             assertEquals(1.2f, droneFireRate.value)
             assertEquals(0.15f, droneSpread.value)

@@ -62,6 +62,8 @@ object KnobsAsteroids {
     val splitCount = splits.int("split_count", "Pieces (non-ice)", 2, min = 0, max = 8)
     val iceSplitMin = splits.int("ice.split_min", "Ice pieces, fewest", 3, min = 0, max = 12)
     val iceSplitMax = splits.int("ice.split_max", "Ice pieces, most", 4, min = 0, max = 12)
+    /** How far out a fragment starts, as a share of its parent's radius (#58). 1 = on the rim, as before 1.5. */
+    val fragmentOffset = splits.float("fragment_offset", "Fragment start (× parent radius)", 0.3f, min = 0f, max = 1f)
 
     private val volatileSpecial = KnobGroup("Asteroids/Types/Volatile", "asteroid.volatile")
     val volatileBlastRadiusFactor = volatileSpecial.float("blast_radius_factor", "Blast radius × own radius", 3f)

@@ -25,7 +25,7 @@ class KnobFormatTest {
 
     @Test
     fun `cooldown shows name and ms`() {
-        assertEquals("3 beats · 1500 ms", KnobFormat.value(KnobsWeapons.railgun.cooldown!!))
+        assertEquals("2 beats · 1000 ms", KnobFormat.value(KnobsWeapons.railgun.cooldown!!))
     }
 
     @Test
@@ -36,19 +36,19 @@ class KnobFormatTest {
 
     @Test
     fun `floats print canonically, ints plainly`() {
-        assertEquals("0.4", KnobFormat.value(KnobsPassives.nanoRegenPerStack))
+        assertEquals("0.3", KnobFormat.value(KnobsPassives.nanoRegenPerStack))
         assertEquals("10", KnobFormat.value(KnobsWeapons.railgunPierce))
     }
 
     @Test
     fun `steps stay in range and on the lattice`() {
         val cd = KnobsWeapons.railgun.cooldown!!
-        assertEquals(13f, KnobFormat.stepUp(cd))
-        assertEquals(11f, KnobFormat.stepDown(cd))
+        assertEquals(9f, KnobFormat.stepUp(cd))
+        assertEquals(7f, KnobFormat.stepDown(cd))
         Tunables.set(cd, 32f)
         assertEquals(32f, KnobFormat.stepUp(cd))
         val dmg = KnobsWeapons.railgun.damage
-        assertEquals(85f, KnobFormat.stepUp(dmg), 0f)
+        assertEquals(110f, KnobFormat.stepUp(dmg), 0f)
     }
 
     @Test

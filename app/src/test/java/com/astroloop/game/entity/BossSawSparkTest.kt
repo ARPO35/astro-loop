@@ -13,14 +13,14 @@ class BossSawSparkTest {
     @Test
     fun `saw disc overlapping the shield ring registers contact`() {
         val saw = EnergySaw().also { it.level = 1 }
-        val discCenterDist = 55f  // 55 < 20 + 45 = 65 -> contact
+        val discCenterDist = 55f  // 55 < 28 + 45 = 73 -> contact
         assertTrue(discCenterDist < saw.discRadius + shieldRing)
     }
 
     @Test
     fun `saw disc clear of the ring does not register contact`() {
         val saw = EnergySaw().also { it.level = 1 }
-        val discCenterDist = 70f  // 70 > 65 -> no contact
+        val discCenterDist = 80f  // 80 > 73 -> no contact
         assertFalse(discCenterDist < saw.discRadius + shieldRing)
     }
 

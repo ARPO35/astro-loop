@@ -26,9 +26,9 @@ class LabEditsTest {
         val kv = MapKeyValue()
         val store = PresetStore(kv)
         val first = LabEdits.set(store, KnobsWeapons.railgun.damage, 120f)
-        LabEdits.set(store, KnobsWeapons.railgun.cooldown!!, 8f)
+        LabEdits.set(store, KnobsWeapons.railgun.cooldown!!, 10f)
         val reloaded = PresetStore(kv).get(first.id)!!
-        assertEquals(mapOf("railgun.damage" to 120f, "railgun.cooldown" to 8f), reloaded.payload.values)
+        assertEquals(mapOf("railgun.damage" to 120f, "railgun.cooldown" to 10f), reloaded.payload.values)
     }
 
     @Test
@@ -37,7 +37,7 @@ class LabEditsTest {
         LabEdits.set(store, KnobsWeapons.railgun.damage, 120f)
         val p = LabEdits.resetKnobs(store, listOf(KnobsWeapons.railgun.damage))
         assertTrue(p.payload.values.isEmpty())
-        assertEquals(80f, KnobsWeapons.railgun.damage.value)
+        assertEquals(100f, KnobsWeapons.railgun.damage.value)
     }
 
     @Test

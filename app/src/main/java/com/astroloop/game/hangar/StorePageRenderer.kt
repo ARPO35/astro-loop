@@ -1,5 +1,6 @@
 package com.astroloop.game.hangar
 
+import com.astroloop.game.render.AnimClock
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
@@ -223,7 +224,7 @@ class StorePageRenderer(
 
             // Shield aura glow when crystal not yet unlocked or during reveal glow phase
             if (!persistence.isCrystalUnlocked() || state.crystalRevealPhase == HangarState.CrystalRevealPhase.GLOW) {
-                val pulse = (0.4f + 0.6f * ((sin((time % 10000L) / 1000.0) + 1f) / 2f)).toFloat()
+                val pulse = (0.4f + 0.6f * ((sin(AnimClock.seconds()) + 1f) / 2f)).toFloat()
                 val glowPaint = Paint().apply {
                     // color set per-ring below (MID outer / ICE inner)
                     style = Paint.Style.STROKE
@@ -292,7 +293,7 @@ class StorePageRenderer(
         val tileSize = rects.firstOrNull()?.width ?: return
 
         val tileBgPaint = Paint().apply {
-            color = 0xFF1A1A2E.toInt()
+            color = StorePriceColor.TILE_BACKGROUND
             style = Paint.Style.FILL
         }
 
@@ -427,11 +428,11 @@ class StorePageRenderer(
                 val flipAlpha = state.storeFlipProgress(index)
                 val currentLevel = persistence.getUpgradeLevel(tile.id!!)
                 if (state.storeFlipShowBack(index)) {
-                    drawUpgradeBack(canvas, rect, tile, currentLevel, flipAlpha, tileSize)
+                    drawUpgradeBack(canvas, rect, tile, currentLevel, flipAlpha, tileSize, state.actualYen)
                 } else {
                     // A card mid-peek is fading its front out; one at rest draws at full alpha.
                     val frontAlpha = if (state.isStoreCardFlipped(index)) flipAlpha else 1f
-                    drawUpgradeFront(canvas, rect, tile, currentLevel, frontAlpha, tileSize)
+                    drawUpgradeFront(canvas, rect, tile, currentLevel, frontAlpha, tileSize, state.actualYen)
                 }
             }
         }
@@ -499,7 +500,8 @@ class StorePageRenderer(
         tile: StoreUpgradeDefinitions.UpgradeTile,
         currentLevel: Int,
         alpha: Float,
-        tileSize: Float
+        tileSize: Float,
+        yen: Int
     ) {
         val a = (255 * alpha).toInt().coerceIn(0, 255)
         val maxLevel = 5
@@ -566,7 +568,7 @@ class StorePageRenderer(
         }
         pipPaint.alpha = 255
 
-        drawCostRow(canvas, rect, currentLevel, maxLevel, a, tileSize)
+        drawCostRow(canvas, rect, currentLevel, maxLevel, a, tileSize, yen)
     }
 
     /**
@@ -574,7 +576,8 @@ class StorePageRenderer(
      *
      * Drawn identically on both faces from `StoreBackLayout.PRICE_BASELINE`, so turning a card over
      * does not move the figure. It is the one thing on the front that survives the flip, which is
-     * the point: the back is where the player decides, and the decision needs the price.
+     * the point: the back is where the player decides, and the decision needs the price. A price
+     * the player cannot pay yet is grey rather than gold ([StorePriceColor]).
      */
     private fun drawCostRow(
         canvas: Canvas,
@@ -582,7 +585,8 @@ class StorePageRenderer(
         currentLevel: Int,
         maxLevel: Int,
         a: Int,
-        tileSize: Float
+        tileSize: Float,
+        yen: Int
     ) {
         costPaint.textSize = StoreTextSizes.frontBody(tileSize)
         costPaint.alpha = a
@@ -591,11 +595,9 @@ class StorePageRenderer(
             costPaint.color = 0xFF44FF44.toInt()
             canvas.drawText("MAX", rect.centerX(), y, costPaint)
         } else {
-            costPaint.color = 0xFFFFD700.toInt()
-            canvas.drawText(
-                GameConfig.formatYen(PersistenceManager.getUpgradeCost(currentLevel)),
-                rect.centerX(), y, costPaint
-            )
+            val cost = PersistenceManager.getUpgradeCost(currentLevel)
+            costPaint.color = StorePriceColor.of(cost, yen)
+            canvas.drawText(GameConfig.formatYen(cost), rect.centerX(), y, costPaint)
         }
         costPaint.alpha = 255
     }
@@ -615,7 +617,8 @@ class StorePageRenderer(
         tile: StoreUpgradeDefinitions.UpgradeTile,
         level: Int,
         alpha: Float,
-        tileSize: Float
+        tileSize: Float,
+        yen: Int
     ) {
         val a = (255 * alpha).toInt().coerceIn(0, 255)
 
@@ -673,7 +676,7 @@ class StorePageRenderer(
 
         // The one thing that survives the flip. StoreBackLayout.BOTTOM_LIMIT is set to keep the
         // content above this row, so it can be drawn last without measuring against it here.
-        drawCostRow(canvas, rect, level, maxLevel = 5, a = a, tileSize = tileSize)
+        drawCostRow(canvas, rect, level, maxLevel = 5, a = a, tileSize = tileSize, yen = yen)
 
         tileBorderPaint.alpha = 255
         textPaint.alpha = 255

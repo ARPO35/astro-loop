@@ -38,7 +38,7 @@ class VampiricLeechDeathFadeTest {
         }
     }
 
-    /** Edge dist = 50 - 30 = 20 ≤ LEECH_RANGE → in range, so a stream seeds. */
+    /** Edge dist = 50 - 30 = 20 ≤ the one-stack range → in range, so a stream seeds. */
     private fun inRangeAsteroid() = Asteroid().apply {
         isActive = true
         position.set(150f, 100f)

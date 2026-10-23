@@ -43,6 +43,7 @@ import com.astroloop.game.tuning.RunSummary
 import com.astroloop.game.tuning.Tunables
 import com.astroloop.game.util.Collision2D
 import com.astroloop.game.util.Vector2
+import com.astroloop.game.weapon.HealOnHit
 import com.astroloop.game.weapon.weapons.EnergySaw
 import com.astroloop.game.weapon.weapons.WarpSaw
 import kotlin.math.abs
@@ -293,8 +294,7 @@ class GameSurfaceView(
     private val fadingTrails = mutableListOf<FadingTrail>()
     private val bossSystem = BossSystem(state, boss, ship, weaponSystem, visualEffects, ::handlePlayerDeath)
     private val fleetSystem = FleetSystem(boss, ship, EntityPools.projectiles, visualEffects)
-    private val sawDamageSystem = SawDamageSystem(state, ship, weaponSystem, visualEffects, ::applyDamageModifiers, ::handleAsteroidDestroyedWithTrail, ::onEnemyDestroyed,
-        spawnProjectile = { /* projectiles live in EntityPools.projectiles — obtain() adds to inUse, no separate list needed */ })
+    private val sawDamageSystem = SawDamageSystem(state, ship, weaponSystem, visualEffects, ::applyDamageModifiers, ::handleAsteroidDestroyedWithTrail, ::onEnemyDestroyed)
     private val beamDamageSystem = BeamDamageSystem(
         state, ship, weaponSystem,
         addDamageNumber = { x, y, amount, color, isCrit -> visualEffects.addDamageNumber(x, y, amount, color, isCrit) },
@@ -318,7 +318,7 @@ class GameSurfaceView(
         onEnemyDestroyed = ::onEnemyDestroyed,
         onShipDamaged = ::applyVolatileShockwaveDamage
     )
-    private val projectileEffectsSystem = ProjectileEffectsSystem(ship, state, collisionSystem, visualEffects, ::applyDamageModifiers, ::handleAsteroidDestroyedWithTrail, ::onEnemyDestroyed, ::handlePlayerDeath, volatileShockwaveSystem::spawn)
+    private val projectileEffectsSystem = ProjectileEffectsSystem(ship, state, collisionSystem, visualEffects, ::applyDamageModifiers, ::handleAsteroidDestroyedWithTrail, ::onEnemyDestroyed, { dmg -> if (ship.isActive) hitPlayer(dmg, "enemy_projectile") }, volatileShockwaveSystem::spawn)
     private val radioSystem = RadioSystem()
     private val crewmateEncounter = CrewmateEncounter(ship, EntityPools.projectiles)
 
@@ -455,6 +455,12 @@ class GameSurfaceView(
     // Good ending: camera freeze + drive-off
     private var desertCameraFrozen = false
     private var desertDriveOffActive = false
+    /** Where the held camera settles during the drive-off; see [desertDriveOffCameraY]. */
+    private var desertDriveOffHoldY = 0f
+    private var desertDriveOffPanSpeed = 0f
+    /** Camera Y when the drive-off began; the hold is recomputed from it each frame (the phone may rotate). */
+    private var desertDriveOffStartCameraY = 0f
+    private var desertDriveOffElapsed = 0f
     // Crystal sequence: TB walks to crystal
     private var desertTbWalkingToCrystal = false
     private var desertTbCrystalTarget = floatArrayOf(0f, 0f)
@@ -469,8 +475,17 @@ class GameSurfaceView(
     private var screenHeight: Float = 0f
     private var renderScale: Float = 1f
 
-    // System-cutout insets in physical px, forwarded by MainActivity. Divided by
-    // renderScale into design units when building the ScreenLayout.
+    // System-cutout insets in physical px as MainActivity delivered them. Written only by
+    // applyInsets, which also dedupes on them.
+    private var rawInsetLeftPx = 0f
+    private var rawInsetTopPx = 0f
+    private var rawInsetRightPx = 0f
+    private var rawInsetBottomPx = 0f
+
+    // The insets everything lays out against, in physical px: the raw insets merged with the
+    // TV overscan margin, recomputed in applyScreenDimensions where the surface size is known.
+    // Divided by renderScale into design units when building the ScreenLayout.
+    private val overscan = TvOverscan.fraction(context)
     private var insetLeftPx = 0f
     private var insetTopPx = 0f
     private var insetRightPx = 0f
@@ -484,10 +499,10 @@ class GameSurfaceView(
         // Android delivers identical insets repeatedly; ignore no-op deliveries so the
         // steady state never re-touches state the render thread reads. Real work happens
         // only on an actual cutout change (e.g. fold/unfold), which also fires surfaceChanged.
-        if (left == insetLeftPx && top == insetTopPx &&
-            right == insetRightPx && bottom == insetBottomPx
+        if (left == rawInsetLeftPx && top == rawInsetTopPx &&
+            right == rawInsetRightPx && bottom == rawInsetBottomPx
         ) return
-        insetLeftPx = left; insetTopPx = top; insetRightPx = right; insetBottomPx = bottom
+        rawInsetLeftPx = left; rawInsetTopPx = top; rawInsetRightPx = right; rawInsetBottomPx = bottom
         if (width > 0 && height > 0) {
             synchronized(holder) {
                 applyScreenDimensions(width, height)
@@ -569,6 +584,90 @@ class GameSurfaceView(
 
         /** See the `desertSpan` property: the long edge, the same either way up. */
         fun desertWorldSpan(screenWidth: Float, screenHeight: Float): Float = maxOf(screenWidth, screenHeight)
+
+        /** Where the foam line sits: 80% of the way down the beach. Tanks stop 25 short of it. */
+        fun desertWaterlineY(spawnY: Float, span: Float): Float = spawnY + span * 0.5f + (span * 0.5f) * 0.8f
+
+        /** The north face of the beached landing craft's solid box (wet sand top + 10, less 40). */
+        fun desertLandingCraftTopY(spawnY: Float, span: Float): Float =
+            spawnY + span * 0.5f + (span * 0.5f) * 0.6f + 10f - 40f
+
+        /** The beached landing craft's solid box: centre x and half width. */
+        const val DESERT_LANDING_CRAFT_X = 30f
+        const val DESERT_LANDING_CRAFT_HALF_WIDTH = 35f
+
+        /**
+         * Where a tank at ([x], [y]) stops if it keeps driving south: the landing craft's north
+         * face when the tank is in the craft's column and north of it, else the waterline clamp.
+         */
+        fun desertTankStopY(x: Float, y: Float, spawnY: Float, span: Float, tankRadius: Float): Float {
+            val craftTop = desertLandingCraftTopY(spawnY, span)
+            // Widened by the turning drift: a tank still turning south may slide into the column, so it brakes in good time.
+            val inCraftColumn = abs(x - DESERT_LANDING_CRAFT_X) <
+                DESERT_LANDING_CRAFT_HALF_WIDTH + tankRadius + DESERT_DRIVE_OFF_TURN_DRIFT
+            return if (inCraftColumn && y <= craftTop) craftTop - tankRadius else desertWaterlineY(spawnY, span) - 25f
+        }
+
+        /**
+         * The northmost of [desertTankStopY] over every column: the line every tank can at least
+         * reach driving south, wherever the turn south leaves it.
+         */
+        fun desertTankSouthLimitY(spawnY: Float, span: Float, tankRadius: Float): Float =
+            minOf(desertWaterlineY(spawnY, span) - 25f, desertLandingCraftTopY(spawnY, span) - tankRadius)
+
+        /**
+         * The drive-off's cruising speed. The old code moved each tank twice a frame at 200 (once
+         * scripted, once by input or TB's follow), so this keeps the pace the scene always had.
+         */
+        const val DESERT_DRIVE_OFF_SPEED = 400f
+        /** The drive-off turns at 2 rad/s, so its turning radius is speed / 2: how far a tank can drift sideways. */
+        const val DESERT_DRIVE_OFF_TURN_DRIFT = DESERT_DRIVE_OFF_SPEED / 2f
+        private const val DESERT_DRIVE_OFF_ACCEL = 300f   // the player tank's own acceleration
+        private const val DESERT_DRIVE_OFF_DECEL = 400f   // and its own deceleration
+        /** Braking curve: gentler than [DESERT_DRIVE_OFF_DECEL], so the tank can follow it. */
+        private const val DESERT_DRIVE_OFF_BRAKE = 300f
+
+        /**
+         * A drive-off tank's next speed (#59). Cruises at [DESERT_DRIVE_OFF_SPEED], but brakes to
+         * a stop as it nears [distanceToStop] = 0 — the shore or the landing craft — so a tank
+         * that reaches the beach before leaving the frame parks there instead of grinding against
+         * the waterline. A tank already pressed against the shore and facing it is simply stopped.
+         */
+        fun desertDriveOffSpeed(current: Float, distanceToStop: Float, headingSin: Float, deltaTime: Float): Float {
+            if (headingSin > 0f && distanceToStop <= 0.5f) return 0f
+            val target = minOf(DESERT_DRIVE_OFF_SPEED, sqrt(2f * DESERT_DRIVE_OFF_BRAKE * distanceToStop.coerceAtLeast(0f)))
+            return if (current < target) minOf(current + DESERT_DRIVE_OFF_ACCEL * deltaTime, target)
+            else maxOf(current - DESERT_DRIVE_OFF_DECEL * deltaTime, target)
+        }
+
+        /** How far below the held frame both tanks must be before the good ending fades out. */
+        const val DESERT_DRIVE_OFF_EXIT_MARGIN = 50f
+
+        /**
+         * Where the camera holds while the good ending's tanks drive off south.
+         *
+         * Issue #59: the camera used to hold wherever it stood. Near the beach that put the exit
+         * line ([DESERT_DRIVE_OFF_EXIT_MARGIN] below the frame) past [southLimitY], where no tank
+         * can go, and the scene waited forever. This keeps the frame's bottom edge far enough
+         * north for the tanks to leave it. With room to spare it is the camera's own position, so
+         * the usual shot is unchanged. It never moves the camera south.
+         */
+        fun desertDriveOffCameraY(cameraY: Float, screenHeight: Float, southLimitY: Float): Float =
+            minOf(cameraY, southLimitY - DESERT_DRIVE_OFF_EXIT_MARGIN - 10f - screenHeight)
+
+        /** Insurance: the drive-off ends after this long even if a tank cannot leave the frame. */
+        const val DESERT_DRIVE_OFF_MAX_SECONDS = 10f
+
+        /** Whether the drive-off is over: both tanks below the frame, or the time cap reached. */
+        fun desertDriveOffDone(playerY: Float, tbY: Float, cameraY: Float, screenHeight: Float, elapsed: Float): Boolean {
+            val exitLine = cameraY + screenHeight + DESERT_DRIVE_OFF_EXIT_MARGIN
+            return (playerY > exitLine && tbY > exitLine) || elapsed >= DESERT_DRIVE_OFF_MAX_SECONDS
+        }
+
+        /** The held camera's pan north: top speed, ease-in/out rate, and its slightly gentler braking curve. */
+        private const val DESERT_DRIVE_OFF_PAN_SPEED = 450f
+        private const val DESERT_DRIVE_OFF_PAN_ACCEL = 600f
+        private const val DESERT_DRIVE_OFF_PAN_BRAKE = 450f
 
         /**
          * How far either side of the player's tank desert enemies spawn. The old corridor's own
@@ -687,6 +786,10 @@ class GameSurfaceView(
     }
 
     private fun applyScreenDimensions(physW: Int, physH: Int) {
+        insetLeftPx = TvOverscan.merge(rawInsetLeftPx, physW.toFloat(), overscan)
+        insetRightPx = TvOverscan.merge(rawInsetRightPx, physW.toFloat(), overscan)
+        insetTopPx = TvOverscan.merge(rawInsetTopPx, physH.toFloat(), overscan)
+        insetBottomPx = TvOverscan.merge(rawInsetBottomPx, physH.toFloat(), overscan)
         val m = DesignSpace.metricsFor(
             physW.toFloat(), physH.toFloat(),
             insetLeftPx, insetTopPx, insetRightPx, insetBottomPx
@@ -1555,26 +1658,11 @@ class GameSurfaceView(
                         if (aimDiff < 0.3f) {
                             pastAstroFireTimer -= deltaTime
                             if (pastAstroFireTimer <= 0f) {
-                                pastAstroFireTimer = 2.5f
-                                val fdx = boss.position.x - pastAstro.position.x
-                                val fdy = boss.position.y - pastAstro.position.y
-                                val fdist = sqrt(fdx * fdx + fdy * fdy).coerceAtLeast(1f)
-                                val dirX = fdx / fdist
-                                val dirY = fdy / fdist
-                                val spawnX = pastAstro.position.x + dirX * 25f
-                                val spawnY = pastAstro.position.y + dirY * 25f
-                                val p = EntityPools.projectiles.obtain()
-                                // 0 damage: boss defeat is scripted, not health-depleted — mirrors fireAtBoss() railgun
-                                p.initialize(spawnX, spawnY, dirX * 2000f, dirY * 2000f,
-                                    ProjectileType.BULLET, 0f, 3f)
-                                p.isEnemyProjectile = false
-                                p.color = 0xFFFFFFFF.toInt()  // Specter white
-                                p.length = 20f
-                                p.width = 3f
-                                p.piercing = true
-                                p.maxPierces = 2
-                                SoundManager.playSFX("sfx_weapon_railgun",
-                                    SoundManager.getWeaponSfxVolume("railgun"))
+                                // Past Astro's Specter rail: the player's L1 railgun at 0 damage,
+                                // like the fleet (boss defeat is scripted, not health-depleted).
+                                pastAstroFireTimer = fleetSystem.shotCooldown("railgun")
+                                fleetSystem.fireWeaponAtBoss(pastAstro.position, "railgun",
+                                    ShipDefinitions.getWeaponColor("railgun"))
                             }
                         }
                     }
@@ -1631,6 +1719,7 @@ class GameSurfaceView(
         // (skip in astro-loop mode — no boss, no story, just survival)
         if (state.survivalTime >= Boss.SPAWN_TIME && !state.bossSpawned && !isCorruptionRun && !state.astroLoopMode) {
             val isAstro = state.activePilotId == "pilot_astro"
+            clearEnemyFire()
             bossSystem.spawnBoss(startingShipId, startingPilotId, asteroids, enemies, powerUps)
             state.bossFightTimer = 0f
             SoundManager.startBossBGM(context)
@@ -1775,7 +1864,7 @@ class GameSurfaceView(
                 if (!enemy.isCrewmate && !isOnScreen(enemy)) continue
                 val dx = p.position.x - enemy.position.x
                 val dy = p.position.y - enemy.position.y
-                val enemyFuseThreshold = 40f + enemy.radius
+                val enemyFuseThreshold = Projectile.PROXIMITY_FUSE_RANGE + enemy.radius
                 if (dx * dx + dy * dy <= enemyFuseThreshold * enemyFuseThreshold) {
                     p.expiredNaturally = true
                     p.isActive = false
@@ -1788,7 +1877,7 @@ class GameSurfaceView(
                     if (!asteroid.isActive || asteroid.fragmentImmunityTimer > 0f) continue
                     val dx = p.position.x - asteroid.position.x
                     val dy = p.position.y - asteroid.position.y
-                    val asteroidFuseThreshold = 40f + asteroid.radius
+                    val asteroidFuseThreshold = Projectile.PROXIMITY_FUSE_RANGE + asteroid.radius
                     if (dx * dx + dy * dy <= asteroidFuseThreshold * asteroidFuseThreshold) {
                         p.expiredNaturally = true
                         p.isActive = false
@@ -1798,12 +1887,10 @@ class GameSurfaceView(
             }
         }
 
-        // Enemy proximity fuse: detonate enemy flak/mine when near player
+        // Enemy proximity fuse: the player's own rule, measured to the player's ship
         for (p in projectiles) {
             if (!p.isActive || !p.proximityFuse || !p.isEnemyProjectile) continue
-            val dx = p.position.x - ship.position.x
-            val dy = p.position.y - ship.position.y
-            if (dx * dx + dy * dy <= 40f * 40f) {
+            if (EnemyWeaponSystem.proximityFuseTriggered(p.position.x, p.position.y, ship)) {
                 p.expiredNaturally = true
                 p.isActive = false
             }
@@ -1934,7 +2021,7 @@ class GameSurfaceView(
         enemyAISystem.update(enemies, ship, deltaTime, asteroids, projectiles)
 
         // Update enemy weapons (cooldowns, stateful weapons like orbiters)
-        enemyWeaponSystem.update(enemies, ship, deltaTime)
+        enemyWeaponSystem.update(enemies, deltaTime)
 
         // Fire enemy weapons (spawn shield is defensive only — enemies still attack)
         for (enemy in enemies) {
@@ -1974,24 +2061,22 @@ class GameSurfaceView(
             }
         }
 
-        // Cryo Field: slow nearby enemies and asteroids each frame
-        if (state.cryoSlowPercent > 0f) {
+        // Cryo Field: slow nearby enemies and asteroids each frame, more the closer they are.
+        // Both are speed caps (CryoSlow), so the slow never compounds. Enemies cap against their
+        // own speed and pick it back up once out; rocks keep the slowest speed they reached.
+        if (state.cryoCentreSlow > 0f) {
             val cryoRadius = state.getCryoRadius()
-            val cryoRadiusSq = cryoRadius * cryoRadius
-            val slowFactor = (1f - state.cryoSlowPercent).coerceAtLeast(0.1f)
+            val centreSlow = state.cryoCentreSlow
+            val curve = KnobsPassives.cryoCurve.value
             for (enemy in enemies) {
                 if (!enemy.isActive || enemy.isWarping) continue
                 val dx = enemy.position.x - ship.position.x
                 val dy = enemy.position.y - ship.position.y
                 val enemyEdgeRadius = cryoRadius + enemy.radius
-                if (dx * dx + dy * dy < enemyEdgeRadius * enemyEdgeRadius) {
-                    val speed = sqrt(enemy.velocity.x * enemy.velocity.x + enemy.velocity.y * enemy.velocity.y)
-                    val maxSlowedSpeed = enemy.getEffectiveSpeed() * slowFactor
-                    if (speed > maxSlowedSpeed && speed > 0.001f) {
-                        val scale = maxSlowedSpeed / speed
-                        enemy.velocity.x *= scale
-                        enemy.velocity.y *= scale
-                    }
+                val distSq = dx * dx + dy * dy
+                if (distSq < enemyEdgeRadius * enemyEdgeRadius) {
+                    val factor = CryoSlow.speedFactor(sqrt(distSq), enemyEdgeRadius, centreSlow, curve)
+                    CryoSlow.capSpeed(enemy.velocity, enemy.getEffectiveSpeed() * factor)
                     enemy.cryoAffected = true
                 } else {
                     enemy.cryoAffected = false
@@ -2002,12 +2087,9 @@ class GameSurfaceView(
                 val dx = asteroid.position.x - ship.position.x
                 val dy = asteroid.position.y - ship.position.y
                 val asteroidEdgeRadius = cryoRadius + asteroid.radius
-                if (dx * dx + dy * dy < asteroidEdgeRadius * asteroidEdgeRadius) {
-                    if (!asteroid.cryoAffected) {
-                        // First frame entering field: apply slow once
-                        asteroid.velocity.x *= slowFactor
-                        asteroid.velocity.y *= slowFactor
-                    }
+                val distSq = dx * dx + dy * dy
+                if (distSq < asteroidEdgeRadius * asteroidEdgeRadius) {
+                    CryoSlow.slowRock(asteroid, sqrt(distSq), asteroidEdgeRadius, centreSlow, curve)
                     asteroid.cryoAffected = true
                 } else {
                     asteroid.cryoAffected = false
@@ -2274,9 +2356,10 @@ class GameSurfaceView(
 
                 // Ion Orbiters / Frost Ring: silent against asteroids — they only sound on enemy hits (below, by request).
 
-                // Siphon Needles: heal per hit
-                if (projectile.weaponId == "siphon_needles") {
-                    ship.health = (ship.health + KnobsWeapons.siphonHealPerHit.value).coerceAtMost(ship.maxHealth)
+                // Siphon Needles / Leech Burst: heal per hit
+                val hitHeal = HealOnHit.amount(projectile.weaponId, damage)
+                if (hitHeal > 0f) {
+                    ship.health = (ship.health + hitHeal).coerceAtMost(ship.maxHealth)
                 }
 
                 // Add damage number
@@ -2311,6 +2394,7 @@ class GameSurfaceView(
             for (enemy in enemies) {
                 if (!enemy.isActive || enemy.isWarping) continue  // Skip warping enemies
                 if (!enemy.isCrewmate && !isOnScreen(enemy)) continue  // Can't damage off-screen enemies
+                if (projectile.alreadyHit(enemy)) continue  // piercing: once per target (orbs: per pass)
 
                 if (projectile.collidesWith(enemy)) {
                     // projectile.damage already includes damageMultiplier from getDamage()
@@ -2319,46 +2403,14 @@ class GameSurfaceView(
                     state.telemetryTotalDamageDealt += damage
                     if (isCrit) { state.telemetryCritsThisMinute++; state.telemetryCritsTotal++ }
 
+                    // Measured, not re-derived: a dodged or spawn-shielded hit leaves health untouched, so it heals nothing.
+                    val healthBeforeHit = enemy.health
                     val destroyed = enemy.takeDamage(damage, projectile.ignoresSpawnShield)
+                    val damageDealt = healthBeforeHit - enemy.health
                     projectile.onHit(enemy)
                     // Gambler's Mines: fire payout on every detonation (enemy contact)
                     if (projectile.weaponId == "jackpot_mines") {
                         applyGamblersMineEffect(projectile.position.x, projectile.position.y)
-                    }
-
-                    // Autonomous Ace on-hit mechanics: fragmentation burst
-                    val isAutonomousAce = projectile.weaponId == "autonomous_ace"
-                    if (isAutonomousAce && !projectile.hasChained) {
-                        val weaponColor = ShipDefinitions.getWeaponColor("homing_missiles", state.isCorruptionRun)
-                        // Find nearest active enemy excluding the hit enemy
-                        var fragTarget: EnemyShip? = null
-                        var bestDist = Float.MAX_VALUE
-                        for (e in enemies) {
-                            if (e == enemy || !e.isActive) continue
-                            val d = e.distanceTo(enemy)
-                            if (d < bestDist) { bestDist = d; fragTarget = e }
-                        }
-
-                        repeat(2) {
-                            val angle = ship.rotation + (kotlin.random.Random.nextFloat() - 0.5f) * 0.6f
-                            val direction = com.astroloop.game.util.Vector2.fromAngle(angle)
-                            val miniMissile = EntityPools.projectiles.obtain()
-                            miniMissile.initialize(
-                                x = enemy.position.x,
-                                y = enemy.position.y,
-                                vx = direction.x * 350f,
-                                vy = direction.y * 350f,
-                                projectileType = ProjectileType.MISSILE,
-                                projectileDamage = 12f,
-                                projectileLifetime = 1.5f
-                            )
-                            miniMissile.weaponId = projectile.weaponId
-                            miniMissile.hasChained = true
-                            miniMissile.radius = 5f
-                            miniMissile.homingStrength = 3f
-                            miniMissile.target = fragTarget
-                            miniMissile.color = weaponColor
-                        }
                     }
 
                     // Ion Orbiters / Frost Ring: sound on hit with cooldown
@@ -2372,9 +2424,10 @@ class GameSurfaceView(
                         projectileEffectsSystem.spawnBombletsFromCollision(projectile)
                     }
 
-                    // Siphon Needles: heal per hit
-                    if (projectile.weaponId == "siphon_needles") {
-                        ship.health = (ship.health + KnobsWeapons.siphonHealPerHit.value).coerceAtMost(ship.maxHealth)
+                    // Siphon Needles / Leech Burst: heal per hit
+                    val hitHeal = HealOnHit.amount(projectile.weaponId, damageDealt)
+                    if (hitHeal > 0f) {
+                        ship.health = (ship.health + hitHeal).coerceAtMost(ship.maxHealth)
                     }
 
                     // Phoenix Flare: suppress visual effects on pierce hits beyond the first to avoid frame spike
@@ -2463,6 +2516,7 @@ class GameSurfaceView(
             for (projectile in projectiles) {
                 if (!projectile.isActive || projectile.isEnemyProjectile) continue
                 if (projectile.isVisualOnly) continue  // non-damaging telegraph (e.g. Lingering Nova core)
+                if (projectile.alreadyHit(boss)) continue  // piercing: once per target (orbs: per pass)
                 val dx = projectile.position.x - boss.position.x
                 val dy = projectile.position.y - boss.position.y
                 val dist = sqrt(dx * dx + dy * dy)
@@ -2518,39 +2572,10 @@ class GameSurfaceView(
         // Check enemy projectile hits on player
         if (!ship.isInvulnerable) {
             for (projectile in projectiles) {
-                if (!projectile.isActive || !projectile.isEnemyProjectile) continue
+                if (!EnemyWeaponSystem.canHitPlayer(projectile)) continue
 
                 if (projectile.collidesWith(ship)) {
-                    // Try crystal dodge or evasion first
-                    if (!tryCrystalDodge() && !tryEvade(state)) {
-                        val healthBefore = ship.health
-                        val shieldBefore = ship.currentShield
-                        ship.takeDamage(projectile.damage)
-                        state.telemetryDamageTakenBy["enemy_projectile"] = (state.telemetryDamageTakenBy["enemy_projectile"] ?: 0f) + projectile.damage
-                        state.telemetryTotalDamageTaken += projectile.damage
-                        state.lastDamageSource = "enemy_projectile"
-                        vibrateHit()
-                        playDamageSound(shieldBefore, ship.currentShield)
-                        if (!isNonAstroCorruptionRun) ship.makeInvulnerable()
-
-                        // Revenge Protocol: trigger on ship damage
-                        val revengeStacks = state.passiveStacks["revenge_protocol"] ?: 0
-                        if (revengeStacks > 0) {
-                            state.revengeTimer = revengeStacks * KnobsPassives.revengeSecondsPerStack.value
-                            state.revengeActive = true
-                        }
-
-                        if (ship.health <= 0) {
-                            handlePlayerDeath()
-                        } else {
-                            val healthLost = healthBefore - ship.health
-                            if (healthLost > ship.maxHealth * 0.25f) {
-                                radioSystem.onBigHit(state)
-                            } else if (ship.health < ship.maxHealth * 0.20f) {
-                                radioSystem.onLowHealth(state)
-                            }
-                        }
-                    }
+                    hitPlayer(projectile.damage, "enemy_projectile")
                     projectile.isActive = false
                     if (projectile.explodeOnDeath) projectile.expiredNaturally = true
                     break
@@ -2568,48 +2593,23 @@ class GameSurfaceView(
             applyGamblersMineEffect(mx, my)
         }
 
-        // Enemy saw disc damage (Ripper enemies with energy_saw)
+        // Enemy saw disc damage: the Rusher's, and a crewmate's on the Ripper (UNIT-7). Both fly
+        // the player's L1 saw (owner, 2026-10-20).
         if (!ship.isInvulnerable) {
             for (enemy in enemies) {
-                if (!enemy.isActive || enemy.weaponId != "energy_saw") continue
-                if (enemy.isSpawnShielded || enemy.isWarping || enemy.isCrewmate) continue
+                if (!enemy.isActive) continue
+                val saw = enemyWeaponSystem.sawOf(enemy) ?: continue
+                if (enemy.isSpawnShielded || enemy.isWarping) continue
 
                 val discPositions = enemyWeaponSystem.getSawDiscPositions(enemy)
                 for ((discX, discY) in discPositions) {
                     val dx = discX - ship.position.x
                     val dy = discY - ship.position.y
                     val dist = sqrt(dx * dx + dy * dy)
-                    if (dist < enemy.sawDiscRadius + ship.radius) {
-                        if (enemy.weaponCooldown <= 0f) {
-                            if (!tryCrystalDodge() && !tryEvade(state)) {
-                                val healthBefore = ship.health
-                                val shieldBefore = ship.currentShield
-                                ship.takeDamage(enemy.weaponDamage)
-                                state.telemetryDamageTakenBy["enemy_contact"] = (state.telemetryDamageTakenBy["enemy_contact"] ?: 0f) + enemy.weaponDamage
-                                state.telemetryTotalDamageTaken += enemy.weaponDamage
-                                state.lastDamageSource = "enemy_contact"
-                                enemy.weaponCooldown = 0.1f  // Saw tick rate
-                                vibrateHit()
-                                playDamageSound(shieldBefore, ship.currentShield)
-                                if (!isNonAstroCorruptionRun) ship.makeInvulnerable()
-
-                                // Revenge Protocol: trigger on ship damage
-                                val revengeStacks = state.passiveStacks["revenge_protocol"] ?: 0
-                                if (revengeStacks > 0) {
-                                    state.revengeTimer = revengeStacks * KnobsPassives.revengeSecondsPerStack.value
-                                    state.revengeActive = true
-                                }
-
-                                if (ship.health <= 0) {
-                                    handlePlayerDeath()
-                                } else {
-                                    val healthLost = healthBefore - ship.health
-                                    if (healthLost > ship.maxHealth * 0.25f) {
-                                        radioSystem.onBigHit(state)
-                                    } else if (ship.health < ship.maxHealth * 0.20f) {
-                                        radioSystem.onLowHealth(state)
-                                    }
-                                }
+                    if (dist < saw.discRadius + ship.radius) {
+                        if (saw.canFire()) {
+                            if (hitPlayer(enemyWeaponSystem.sawDamage(enemy, saw), "enemy_contact")) {
+                                saw.cooldownTimer = saw.getTickRate()
                             }
                         }
                         break
@@ -3039,7 +3039,7 @@ class GameSurfaceView(
                         vx = dx / dist * speed,
                         vy = dy / dist * speed,
                         projectileType = ProjectileType.RECALL_SHOT,
-                        projectileDamage = 80f,  // Base railgun damage
+                        projectileDamage = 80f,  // Pre-1.5 railgun damage, kept on purpose for the afterimage (owner, 2026-10-20); not the railgun knob
                         projectileLifetime = 4f
                     )
                     projectile.weaponId = "railgun"
@@ -3548,47 +3548,53 @@ class GameSurfaceView(
         }
     }
 
-    private fun checkEnemyProjectileHitsOnPlayer(projectiles: List<Projectile>) {
-        // Check enemy projectile hits on player
-        if (!ship.isInvulnerable) {
-            for (projectile in projectiles) {
-                if (!projectile.isActive || !projectile.isEnemyProjectile) continue
+    /**
+     * One normal hit on the player from an enemy source: crystal dodge / evade first, then damage,
+     * telemetry under [source], hit feedback, i-frames, Revenge Protocol, and death or radio.
+     * Returns true when damage was dealt (false when dodged).
+     */
+    private fun hitPlayer(damage: Float, source: String): Boolean {
+        if (tryCrystalDodge() || tryEvade(state)) return false
+        val healthBefore = ship.health
+        val shieldBefore = ship.currentShield
+        ship.takeDamage(damage)
+        state.telemetryDamageTakenBy[source] = (state.telemetryDamageTakenBy[source] ?: 0f) + damage
+        state.telemetryTotalDamageTaken += damage
+        state.lastDamageSource = source
+        vibrateHit()
+        playDamageSound(shieldBefore, ship.currentShield)
+        if (!isNonAstroCorruptionRun) ship.makeInvulnerable()
 
-                if (projectile.collidesWith(ship)) {
-                    // Try crystal dodge or evasion first
-                    if (!tryCrystalDodge() && !tryEvade(state)) {
-                        val healthBefore = ship.health
-                        val shieldBefore = ship.currentShield
-                        ship.takeDamage(projectile.damage)
-                        state.telemetryDamageTakenBy["enemy_projectile"] = (state.telemetryDamageTakenBy["enemy_projectile"] ?: 0f) + projectile.damage
-                        state.telemetryTotalDamageTaken += projectile.damage
-                        state.lastDamageSource = "enemy_projectile"
-                        vibrateHit()
-                        playDamageSound(shieldBefore, ship.currentShield)
-                        if (!isNonAstroCorruptionRun) ship.makeInvulnerable()
+        // Revenge Protocol: trigger on ship damage
+        val revengeStacks = state.passiveStacks["revenge_protocol"] ?: 0
+        if (revengeStacks > 0) {
+            state.revengeTimer = revengeStacks * KnobsPassives.revengeSecondsPerStack.value
+            state.revengeActive = true
+        }
 
-                        // Revenge Protocol: trigger on ship damage
-                        val revengeStacks = state.passiveStacks["revenge_protocol"] ?: 0
-                        if (revengeStacks > 0) {
-                            state.revengeTimer = revengeStacks * KnobsPassives.revengeSecondsPerStack.value
-                            state.revengeActive = true
-                        }
+        if (ship.health <= 0) {
+            handlePlayerDeath()
+        } else {
+            val healthLost = healthBefore - ship.health
+            if (healthLost > ship.maxHealth * 0.25f) {
+                radioSystem.onBigHit(state)
+            } else if (ship.health < ship.maxHealth * 0.20f) {
+                radioSystem.onLowHealth(state)
+            }
+        }
+        return true
+    }
 
-                        if (ship.health <= 0) {
-                            handlePlayerDeath()
-                        } else {
-                            val healthLost = healthBefore - ship.health
-                            if (healthLost > ship.maxHealth * 0.25f) {
-                                radioSystem.onBigHit(state)
-                            } else if (ship.health < ship.maxHealth * 0.20f) {
-                                radioSystem.onLowHealth(state)
-                            }
-                        }
-                    }
-                    projectile.isActive = false
-                    if (projectile.explodeOnDeath) projectile.expiredNaturally = true
-                    break
-                }
+    /**
+     * Ends all live enemy fire when enemies are cleared by a scripted transition: each enemy's
+     * weapon cleanup (Guardian orbiters fade), and every enemy shot fades over 0.5 s.
+     */
+    private fun clearEnemyFire() {
+        for (e in activeEnemies) if (e.isActive) enemyWeaponSystem.onEnemyRemoved(e)
+        for (p in activeProjectiles) {
+            if (p.isActive && p.isEnemyProjectile) {
+                p.lifetime = p.age + 0.5f
+                p.shouldFadeOut = true
             }
         }
     }
@@ -4331,9 +4337,9 @@ class GameSurfaceView(
                         if (abs(diff) < 0.3f) {
                             pastAstroFireTimer -= deltaTime
                             if (pastAstroFireTimer <= 0f) {
-                                pastAstroFireTimer = 1.2f
+                                pastAstroFireTimer = fleetSystem.shotCooldown(paWeaponId)
                                 val paColor = ShipDefinitions.getWeaponColor(paWeaponId)
-                                fleetSystem.fireWeaponAtBoss(pa.position.x, pa.position.y, paWeaponId, paColor)
+                                fleetSystem.fireWeaponAtBoss(pa.position, paWeaponId, paColor)
                             }
                         }
                     }
@@ -5138,6 +5144,8 @@ class GameSurfaceView(
         desertSettlementVisibleTimer = -1f
         desertCameraFrozen = false
         desertDriveOffActive = false
+        desertDriveOffPanSpeed = 0f
+        desertDriveOffElapsed = 0f
 
         // Clear radio state
         state.radioMessage = null
@@ -5170,7 +5178,10 @@ class GameSurfaceView(
         val touchX = activeMoveDirection().x * desertMagnitude
         val touchY = activeMoveDirection().y * desertMagnitude
 
-        if (desertMagnitude > 0.1f) {
+        if (desertCameraFrozen) {
+            // From the good ending's drive-off to its fade, the scene owns the tank: heading and
+            // speed are set in updateDesertPhaseTransitions; it moves below, inside the usual clamps.
+        } else if (desertMagnitude > 0.1f) {
             // Desired direction from touch
             val desiredAngle = atan2(touchY.toDouble(), touchX.toDouble()).toFloat()
 
@@ -5200,7 +5211,7 @@ class GameSurfaceView(
         ship.position.x = ship.position.x.coerceIn(DESERT_CORRIDOR_LEFT + 25f, DESERT_CORRIDOR_RIGHT - 25f)
 
         // Prevent going south past the waterline
-        val waterlineY = desertSpawnY + desertSpan * 0.5f + (desertSpan * 0.5f) * 0.8f
+        val waterlineY = desertWaterlineY(desertSpawnY, desertSpan)
         ship.position.y = ship.position.y.coerceAtMost(waterlineY - 25f)
 
         // Crystal energy wall at settlement southern edge (horror path)
@@ -5217,11 +5228,12 @@ class GameSurfaceView(
             val beachStartY = desertSpawnY + desertSpan * 0.5f
             val beachEndY = desertSpawnY + desertSpan
             val wetSandTop = beachStartY + (beachEndY - beachStartY) * 0.6f
-            val craftX = 30f
+            val craftX = DESERT_LANDING_CRAFT_X
             val craftY = wetSandTop + 10f
             val (nx, ny) = Collision2D.resolveCircleOutOfAabb(
                 ship.position.x, ship.position.y, ship.radius,
-                craftX - 35f, craftY - 40f, craftX + 35f, craftY + 60f
+                craftX - DESERT_LANDING_CRAFT_HALF_WIDTH, desertLandingCraftTopY(desertSpawnY, desertSpan),
+                craftX + DESERT_LANDING_CRAFT_HALF_WIDTH, craftY + 60f
             )
             ship.position.x = nx
             ship.position.y = ny
@@ -5231,9 +5243,20 @@ class GameSurfaceView(
         ship.health = ship.maxHealth
         ship.currentShield = ship.maxShield
 
-        // Update camera to follow player (frozen during good ending drive-off)
+        // Update camera to follow player (held during good ending drive-off)
         if (!desertCameraFrozen) {
             camera.update(ship)
+        } else {
+            desertDriveOffHoldY = desertDriveOffCameraY(
+                desertDriveOffStartCameraY, screenHeight, desertTankSouthLimitY(desertSpawnY, desertSpan, ship.radius)
+            )
+            if (camera.y > desertDriveOffHoldY) {
+            // #59: near the beach, ease the held camera north (in and out) until the tanks can leave the frame
+            val remaining = camera.y - desertDriveOffHoldY
+            val panTarget = minOf(DESERT_DRIVE_OFF_PAN_SPEED, sqrt(2f * DESERT_DRIVE_OFF_PAN_BRAKE * remaining))
+            desertDriveOffPanSpeed = moveToward(desertDriveOffPanSpeed, panTarget, DESERT_DRIVE_OFF_PAN_ACCEL * deltaTime)
+            camera.y = moveToward(camera.y, desertDriveOffHoldY, desertDriveOffPanSpeed * deltaTime)
+            }
         }
 
         // Update TB (follows player, or walks to crystal)
@@ -5560,7 +5583,10 @@ class GameSurfaceView(
             }
         }
 
-        if (dist > 30f) {
+        if (desertCameraFrozen) {
+            // From the good ending's drive-off to its fade, the scene steers and paces TB
+            // (updateDesertPhaseTransitions); following the player as well would fight it.
+        } else if (dist > 30f) {
             val desiredAngle = atan2(dy.toDouble(), dx.toDouble()).toFloat()
             val angleDiff = normalizeAngle(desiredAngle - desertTbAngle)
             val turnRate = 2.5f
@@ -5579,7 +5605,7 @@ class GameSurfaceView(
 
         desertTbX = desertTbX.coerceIn(DESERT_CORRIDOR_LEFT + 25f, DESERT_CORRIDOR_RIGHT - 25f)
         // Prevent TB from driving past the waterline
-        val tbWaterlineY = desertSpawnY + desertSpan * 0.5f + (desertSpan * 0.5f) * 0.8f
+        val tbWaterlineY = desertWaterlineY(desertSpawnY, desertSpan)
         desertTbY = desertTbY.coerceAtMost(tbWaterlineY - 25f)
 
         // North fence clamp — prevent crossing into settlement while following
@@ -6325,8 +6351,11 @@ class GameSurfaceView(
                     desertEndingTimer = 0f
                     desertCameraFrozen = true
                     desertDriveOffActive = true
+                    desertDriveOffStartCameraY = camera.y
+                    desertDriveOffElapsed = 0f
+                    desertDriveOffPanSpeed = 0f
                 }
-                if (desertDriveOffActive) {
+                if (desertCameraFrozen) {
                     // Turn tanks south (positive Y) and drive off screen
                     val southAngle = (Math.PI / 2f).toFloat()
                     val turnRate = 2.0f * deltaTime
@@ -6335,20 +6364,21 @@ class GameSurfaceView(
                     val tbDiff = normalizeAngle(southAngle - desertTbAngle)
                     desertTbAngle += tbDiff.coerceIn(-turnRate, turnRate)
 
-                    // Drive south at normal speed
-                    val driveSpeed = 200f
-                    desertPlayerSpeed = driveSpeed
-                    desertTbSpeed = driveSpeed
-                    ship.position.x += cos(ship.rotation) * driveSpeed * deltaTime
-                    ship.position.y += sin(ship.rotation) * driveSpeed * deltaTime
-                    desertTbX += cos(desertTbAngle) * driveSpeed * deltaTime
-                    desertTbY += sin(desertTbAngle) * driveSpeed * deltaTime
-
-                    // Check if both tanks are off screen (below camera view)
-                    val screenBottom = camera.y + screenHeight
-                    val playerOffScreen = ship.position.y > screenBottom + 50f
-                    val tbOffScreen = desertTbY > screenBottom + 50f
-                    if (playerOffScreen && tbOffScreen) {
+                    // Drive south; updateDesert / updateDesertTb move both tanks at these speeds
+                    // next frame, inside their clamps. A tank that reaches the shore before
+                    // leaving the frame brakes and parks there while the camera pulls away (#59).
+                    val playerStopY = desertTankStopY(ship.position.x, ship.position.y, desertSpawnY, desertSpan, ship.radius)
+                    desertPlayerSpeed = desertDriveOffSpeed(
+                        desertPlayerSpeed, playerStopY - ship.position.y, sin(ship.rotation), deltaTime
+                    )
+                    val tbStopY = desertTankStopY(desertTbX, desertTbY, desertSpawnY, desertSpan, ship.radius)
+                    desertTbSpeed = desertDriveOffSpeed(
+                        desertTbSpeed, tbStopY - desertTbY, sin(desertTbAngle), deltaTime
+                    )
+                }
+                if (desertDriveOffActive) {
+                    desertDriveOffElapsed += deltaTime
+                    if (desertDriveOffDone(ship.position.y, desertTbY, camera.y, screenHeight, desertDriveOffElapsed)) {
                         desertDriveOffActive = false
                         desertEndingTimer = 0f
                     }
@@ -6928,7 +6958,7 @@ class GameSurfaceView(
         desertTankPaint.color = 0x20FFFFFF.toInt()
         desertTankPaint.strokeWidth = 2f
         desertTankPaint.style = Paint.Style.STROKE
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
         for (i in 0..2) {
             val y = shimmerY + i * 15f
             val path = desertMountainPath  // reuse path object
@@ -6948,7 +6978,7 @@ class GameSurfaceView(
         val beachStartY = desertSpawnY + desertSpan * 0.5f  // Beach starts half an upright screen south of spawn
         val beachEndY = desertSpawnY + desertSpan           // Water starts at boundary
         val seaEndY = beachEndY + desertSpan                // Deep ocean extends beyond
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
 
         // Only render if camera can see this area
         if (camera.y + screenHeight < beachStartY - 100f) return
@@ -7284,7 +7314,7 @@ class GameSurfaceView(
         val cy = desertSettlementWorldY
         val phase = state.desertCrystalPhase
         val t = state.desertCrystalTimer
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
         val orbPulse = 0.7f + 0.3f * sin(time * 4f)
 
         // Crystal hover height — used consistently across phases
@@ -7369,7 +7399,7 @@ class GameSurfaceView(
     private fun renderDesertCrystalWall(canvas: Canvas) {
         if (desertSettlementProgress <= 0f || desertBuildings.isEmpty()) return
         val wallY = desertSettlementWorldY + 220f
-        val time = (System.currentTimeMillis() % 10000L) / 1000f
+        val time = AnimClock.seconds()
 
         // Semi-transparent crystal barrier across full corridor
         val left = DESERT_CORRIDOR_LEFT
@@ -7840,7 +7870,7 @@ class GameSurfaceView(
         enemyAISystem.update(enemies, ship, deltaTime, asteroids, projectiles)
 
         // Update enemy weapons (cooldowns, stateful weapons like orbiters)
-        enemyWeaponSystem.update(enemies, ship, deltaTime)
+        enemyWeaponSystem.update(enemies, deltaTime)
 
         // Fire enemy weapons (visual only — player is dead)
         for (enemy in enemies) {
@@ -8264,17 +8294,17 @@ class GameSurfaceView(
             }
         }
 
-        // Render enemy saw discs (enemies with energy_saw weapon)
+        // Render enemy saw discs: the Rusher's, and a crewmate's on the Ripper (UNIT-7)
         for (enemy in enemies) {
-            if (!enemy.isActive || enemy.weaponId != "energy_saw") continue
-            if (enemy.isWarping || enemy.isCrewmate) continue
+            if (!enemy.isActive || enemy.isWarping) continue
+            val saw = enemyWeaponSystem.sawOf(enemy) ?: continue
             val discPositions = enemyWeaponSystem.getSawDiscPositions(enemy)
             val sawColor = if (state.isCorruptionRun) {
                 ShipDefinitions.getWeaponColor("energy_saw", false)
             } else {
                 Boss.CORRUPTION_COLOR
             }
-            vectorRenderer.renderSawDiscs(canvas, discPositions, enemy.sawDiscRadius, sawColor)
+            vectorRenderer.renderSawDiscs(canvas, discPositions, saw.discRadius, sawColor)
         }
 
         if (playerRushBurn.hasContent() || state.corruptionRushPhase > 0) {

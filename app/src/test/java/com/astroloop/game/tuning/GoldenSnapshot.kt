@@ -138,7 +138,7 @@ object GoldenSnapshot {
             appendLine(
                 "passive $id x$stacks dmg=${s.damageMultiplier} regen=${s.healthRegen} pickup=${s.pickupRangeMultiplier} " +
                     "extraProj=${s.extraProjectiles} lives=${s.extraLives} drones=${s.droneCount} " +
-                    "momentum=${s.momentumDamageBonus} cryo=${s.cryoSlowPercent}/${s.cryoRadiusMultiplier}/${s.getCryoRadius()} " +
+                    "momentum=${s.momentumDamageBonus} cryo=${s.cryoCentreSlow}/${s.cryoRadiusMultiplier}/${s.getCryoRadius()} " +
                     "dropRate=${s.dropRateMultiplier} shieldCap=${s.maxShieldCap} shieldRegenOff=${s.shieldRegenDisabled}"
             )
         }
@@ -150,8 +150,9 @@ object GoldenSnapshot {
         // System constants read by code this plan moves behind knobs.
         appendLine("beam length=${BeamDamageSystem.BEAM_LENGTH} halfWidth=${BeamDamageSystem.BEAM_HALF_WIDTH} tick=${BeamDamageSystem.TICK_INTERVAL}")
         appendLine(
-            "vampiric tick=${VampiricLeecherSystem.TICK_INTERVAL} range=${VampiricLeecherSystem.LEECH_RANGE} " +
-                "perStack=${VampiricLeecherSystem.LEECH_PER_STACK} maxTargets=${VampiricLeecherSystem.MAX_TARGETS}"
+            "vampiric tick=${VampiricLeecherSystem.TICK_INTERVAL} baseRange=${VampiricLeecherSystem.BASE_RANGE} " +
+                "rangePerStack=${VampiricLeecherSystem.RANGE_PER_STACK} leech=${VampiricLeecherSystem.LEECH} " +
+                "maxTargets=${VampiricLeecherSystem.MAX_TARGETS}"
         )
     }
 }

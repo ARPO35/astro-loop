@@ -21,17 +21,17 @@ class GameStatePassiveTest {
     // ─── Nano Repair ───────────────────────────────────────────
 
     @Test
-    fun `nano_repair adds 0_4 health regen per stack`() {
+    fun `nano_repair adds 0_3 health regen per stack`() {
         assertEquals(0f, state.healthRegen, 0.001f)
 
         state.addPassive("nano_repair")
-        assertEquals(0.4f, state.healthRegen, 0.001f)
+        assertEquals(0.3f, state.healthRegen, 0.001f)
 
         state.addPassive("nano_repair")
-        assertEquals(0.8f, state.healthRegen, 0.001f)
+        assertEquals(0.6f, state.healthRegen, 0.001f)
 
         repeat(3) { state.addPassive("nano_repair") }
-        assertEquals(2.0f, state.healthRegen, 0.001f)
+        assertEquals(1.5f, state.healthRegen, 0.001f)
     }
 
     // ─── Duplicator Core ───────────────────────────────────────
@@ -150,33 +150,33 @@ class GameStatePassiveTest {
     // ─── Momentum Drive ────────────────────────────────────────
 
     @Test
-    fun `momentum_drive adds 8 percent damage bonus per stack`() {
+    fun `momentum_drive adds 15 percent damage bonus per stack`() {
         assertEquals(0f, state.momentumDamageBonus, 0.001f)
 
         state.addPassive("momentum_drive")
-        assertEquals(0.08f, state.momentumDamageBonus, 0.001f)
+        assertEquals(0.15f, state.momentumDamageBonus, 0.001f)
 
         state.addPassive("momentum_drive")
-        assertEquals(0.16f, state.momentumDamageBonus, 0.001f)
+        assertEquals(0.30f, state.momentumDamageBonus, 0.001f)
 
         repeat(3) { state.addPassive("momentum_drive") }
-        assertEquals(0.40f, state.momentumDamageBonus, 0.001f)
+        assertEquals(0.75f, state.momentumDamageBonus, 0.001f)
     }
 
     // ─── Cryo Field ────────────────────────────────────────────
 
     @Test
-    fun `cryo_field applies flat 50 percent slow`() {
-        assertEquals(0f, state.cryoSlowPercent, 0.001f)
+    fun `cryo_field slows to a quarter at the centre, whatever the stacks`() {
+        assertEquals(0f, state.cryoCentreSlow, 0.001f)
 
         state.addPassive("cryo_field")
-        assertEquals(0.5f, state.cryoSlowPercent, 0.001f)
+        assertEquals(0.9f, state.cryoCentreSlow, 0.001f)
 
         state.addPassive("cryo_field")
-        assertEquals(0.5f, state.cryoSlowPercent, 0.001f)  // Flat, does not scale
+        assertEquals(0.9f, state.cryoCentreSlow, 0.001f)  // stacks grow the radius, not the slow
 
         repeat(3) { state.addPassive("cryo_field") }
-        assertEquals(0.5f, state.cryoSlowPercent, 0.001f)  // Still flat
+        assertEquals(0.9f, state.cryoCentreSlow, 0.001f)
     }
 
     @Test
@@ -269,11 +269,11 @@ class GameStatePassiveTest {
 
     @Test
     fun `multiple different passives combine correctly`() {
-        state.addPassive("nano_repair")       // +0.4 regen
+        state.addPassive("nano_repair")       // +0.3 regen
         state.addPassive("duplicator_core")   // instant-max: +1 proj (binary effect)
         state.addPassive("glass_cannon")      // instant-max: +100% dmg, shields disabled
 
-        assertEquals(0.4f, state.healthRegen, 0.001f)
+        assertEquals(0.3f, state.healthRegen, 0.001f)
         assertEquals(1, state.extraProjectiles)
         assertEquals(2.00f, state.damageMultiplier, 0.001f)  // 1.0 + 1.0
         assertEquals(0f, state.maxShieldCap, 0.001f)
@@ -285,8 +285,8 @@ class GameStatePassiveTest {
     fun `passives cannot exceed max stacks`() {
         repeat(10) { state.addPassive("nano_repair") }
 
-        // Should cap at 5 stacks = 2.0 regen
-        assertEquals(2.0f, state.healthRegen, 0.001f)
+        // Should cap at 5 stacks = 1.5 regen
+        assertEquals(1.5f, state.healthRegen, 0.001f)
         assertEquals(5, state.getPassiveStacks("nano_repair"))
     }
 

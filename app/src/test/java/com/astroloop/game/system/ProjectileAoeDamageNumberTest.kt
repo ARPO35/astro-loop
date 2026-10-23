@@ -29,7 +29,7 @@ class ProjectileAoeDamageNumberTest {
         applyDamageModifiers = modifiers,
         onAsteroidDestroyed = {},
         onEnemyDestroyed = {},
-        onPlayerDeath = {},
+        onEnemyBlastHitsPlayer = {},
         onVolatileDetonation = { _, _, _, _ -> }
     )
 

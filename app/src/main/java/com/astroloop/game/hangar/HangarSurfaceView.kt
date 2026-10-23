@@ -51,6 +51,7 @@ import com.astroloop.game.input.FocusRegistry
 import com.astroloop.game.input.FocusTarget
 import com.astroloop.game.input.InputSurface
 import com.astroloop.game.core.StoryStateManager
+import com.astroloop.game.core.TvOverscan
 import com.astroloop.game.data.PersistenceManager
 import com.astroloop.game.data.PilotDefinitions
 import com.astroloop.game.data.TelemetryManager
@@ -429,8 +430,18 @@ class HangarSurfaceView(
     private var roomWidth: Float = 0f
     private var crystalGlowSoundPlayed = false
 
-    // System-cutout insets in physical px, forwarded by MainActivity. Divided by
-    // renderScale into design units when building the ScreenLayout.
+    // System-cutout insets in physical px as MainActivity delivered them. Written only by
+    // applyInsets, which also dedupes on them.
+    private var rawInsetLeftPx = 0f
+    private var rawInsetTopPx = 0f
+    private var rawInsetRightPx = 0f
+    private var rawInsetBottomPx = 0f
+
+    // The insets everything lays out against, in physical px: the raw insets merged with the
+    // TV overscan margin, recomputed in applyScreenDimensions where the surface size is known.
+    // Divided by renderScale into design units when building the ScreenLayout.
+    private val overscan = TvOverscan.fraction(context)
+    init { renderer.overscanFraction = overscan }
     private var insetLeftPx = 0f
     private var insetTopPx = 0f
     private var insetRightPx = 0f
@@ -455,10 +466,10 @@ class HangarSurfaceView(
         // Android delivers identical insets repeatedly; ignore no-op deliveries so the
         // steady state never re-touches state the render thread reads. Real work happens
         // only on an actual cutout change (e.g. fold/unfold), which also fires surfaceChanged.
-        if (left == insetLeftPx && top == insetTopPx &&
-            right == insetRightPx && bottom == insetBottomPx && cornerRadius == cornerRadiusPx
+        if (left == rawInsetLeftPx && top == rawInsetTopPx &&
+            right == rawInsetRightPx && bottom == rawInsetBottomPx && cornerRadius == cornerRadiusPx
         ) return
-        insetLeftPx = left; insetTopPx = top; insetRightPx = right; insetBottomPx = bottom
+        rawInsetLeftPx = left; rawInsetTopPx = top; rawInsetRightPx = right; rawInsetBottomPx = bottom
         cornerRadiusPx = cornerRadius
         if (state.cabinetOpen) cabinetResizePending = true
         if (width > 0 && height > 0) {
@@ -688,6 +699,10 @@ class HangarSurfaceView(
     }
 
     private fun applyScreenDimensions(physW: Int, physH: Int) {
+        insetLeftPx = TvOverscan.merge(rawInsetLeftPx, physW.toFloat(), overscan)
+        insetRightPx = TvOverscan.merge(rawInsetRightPx, physW.toFloat(), overscan)
+        insetTopPx = TvOverscan.merge(rawInsetTopPx, physH.toFloat(), overscan)
+        insetBottomPx = TvOverscan.merge(rawInsetBottomPx, physH.toFloat(), overscan)
         val m = DesignSpace.metricsFor(
             physW.toFloat(), physH.toFloat(),
             insetLeftPx, insetTopPx, insetRightPx, insetBottomPx, cornerRadiusPx
@@ -2473,10 +2488,10 @@ class HangarSurfaceView(
                 // gate inside handlePanelTap. `CrewPanelTest` pins that the panel box and its
                 // button stay clear of this tap band, so the two can never compete for the same
                 // point — only which one gets first refusal of everything else.
-                val labelY = HangarMetrics.navLabelY(screenHeight)
+                val labelY = HangarMetrics.navLabelY(screenHeight, overscan)
                 // Nav labels are hidden during the intro cinematic — ignore their tap zone.
                 if (!state.introCinematic &&
-                    y > HangarMetrics.navBandTop(screenHeight) && y < labelY + 15f) {
+                    y > HangarMetrics.navBandTop(screenHeight, overscan) && y < labelY + 15f) {
                     val centerX = screenWidth / 2f
                     // Must match HangarRenderer.drawPageIndicator's content-anchored spacing,
                     // or the side labels' tap zones drift off the drawn labels on wide screens.
@@ -2794,7 +2809,7 @@ class HangarSurfaceView(
         HangarRenderer.publishNavTargets(
             hangarFocus, state.currentPage,
             screenWidth, screenHeight, layout.content.width,
-            state.introCinematic
+            state.introCinematic, overscan
         ) { navigateToPage(it) }
         publishPageFocusTargets()
         hangarFocus.commit()
@@ -3552,8 +3567,14 @@ class HangarSurfaceView(
         cancelAllHaptics()
     }
 
+    /** Whether the render thread is meant to be running. Test-only. */
+    internal val renderThreadRunning: Boolean get() = running
+
     fun resume() {
-        if (!running) {
+        // Only with a surface to draw on, as GameSurfaceView.resume() does (#65). Coming back to
+        // the app resumes before Android has made the new surface; a thread started then tries to
+        // lock the released one until surfaceCreated arrives, which starts the thread itself.
+        if (!running && holder.surface?.isValid == true) {
             hapticsShutDown = false
             running = true
             gameThread = Thread(this)

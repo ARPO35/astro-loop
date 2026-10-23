@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import com.astroloop.game.entity.Boss
+import com.astroloop.game.render.AnimClock
 import com.astroloop.game.render.CrystalPalette
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -424,7 +425,7 @@ class CabinetRenderer(private val m: CabinetMetrics) {
         if (!hasCrystal) return
 
         // The orb, at the game's own numbers and its own pulse.
-        val t = (System.currentTimeMillis() % 10000L) / 1000f
+        val t = AnimClock.seconds()
         val pulse = 0.7f + 0.3f * sin(t * ORB_PULSE_RATE)
         fill.color = CrystalPalette.MID
         fill.alpha = (pulse * ORB_HALO_ALPHA).toInt()

@@ -19,6 +19,8 @@ object KnobsField {
     val speedGrowth = spawn.float("speed_growth", "Speed + per minute", GameConfig.DIFFICULTY_SPEED_INCREASE, min = 0f, max = 1f, applies = Applies.NEW_SPAWNS)
     val maxSpeedFactor = spawn.float("max_speed_factor", "Speed × ceiling", GameConfig.ASTEROID_MAX_SPEED_FACTOR, applies = Applies.NEW_SPAWNS)
     val contactDamage = spawn.float("contact_damage", "Contact damage", Asteroid.BASE_CONTACT_DAMAGE, applies = Applies.NEW_SPAWNS)
+    /** Rocks aim at a random point this far from the ship, not dead at it (#58). 0 = dead-on, as before 1.5. */
+    val aimRadius = spawn.float("aim_radius", "Rock aim spread (radius)", 250f, min = 0f, max = 1000f, applies = Applies.NEW_SPAWNS)
 
     private val curve = KnobGroup("Asteroids/Field/Astro Loop curve", "field")
     val peakMinute = curve.float("peak_minute", "Peak at minute", DifficultySystem.PEAK_MINUTES, min = 1f, max = 30f)

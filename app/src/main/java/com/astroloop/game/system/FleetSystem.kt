@@ -8,6 +8,9 @@ import com.astroloop.game.data.PilotDefinitions
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.entity.*
 import com.astroloop.game.util.Vector2
+import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.weapons.SolarStorm
 import com.astroloop.game.weapon.weapons.EnergySaw
 import com.astroloop.game.weapon.weapons.IonOrbiters
 import kotlin.math.*
@@ -30,6 +33,8 @@ data class FleetShip(
     var ringIndex: Int = 0,  // position within ring
     var sawWeapon: EnergySaw? = null,
     var orbiterWeapon: IonOrbiters? = null,
+    /** The weapon this ship fires at the boss: the player's own class at L1. Null for saw and orbiters. */
+    var weapon: Weapon? = null,
     var velocity: Vector2 = Vector2(0f, 0f),
     var empDisorientTimer: Float = 0f,   // > 0 → tumbling, no firing
     var empRecoveryTimer: Float = 0f    // > 0 → smooth lerp back to orbit
@@ -45,6 +50,10 @@ class FleetSystem(
         const val OUTER_RADIUS = 400f
         const val INNER_RADIUS = 140f
         const val ORBIT_SPEED = 0.3f  // rad/s
+        /** Saw and orbiter ships fire no shot at the boss; their real instances only draw. */
+        private val NO_SHOT_WEAPONS = setOf("energy_saw", "ion_orbiters")
+        /** Shot timer for those ships (it paces no-ops). */
+        private const val NO_SHOT_COOLDOWN = 1.5f
 
         private const val RING_EXPANSION_DURATION = 3f
         private const val OUTER_RADIUS_TARGET = 600f
@@ -203,6 +212,23 @@ class FleetSystem(
         override val isEnemyFirer = false
     }
 
+    // Shots at the boss: the player's own weapon classes fire through this, aimed at the boss
+    private val shotFirer = AimedFirer(isEnemyFirer = false)
+    private val shotTargets = ArrayList<Entity>(1)
+    /** Past Astro's weapons, one per id, kept between shots (Pulse Cannon alternates its fan). */
+    private val pastAstroWeapons = HashMap<String, Weapon?>()
+
+    /** The weapon a ship with [weaponId] fires at the boss, or null for saw and orbiters. */
+    private fun shotWeaponFor(weaponId: String): Weapon? =
+        if (weaponId in NO_SHOT_WEAPONS) null else WeaponFactory.createWeapon(weaponId)
+
+    private fun pastAstroWeapon(weaponId: String): Weapon? =
+        pastAstroWeapons.getOrPut(weaponId) { shotWeaponFor(weaponId) }
+
+    /** Seconds between Past Astro's shots with [weaponId]: the player's L1 cooldown. */
+    fun shotCooldown(weaponId: String): Float =
+        pastAstroWeapon(weaponId)?.getCooldown(fleetNeutralState) ?: NO_SHOT_COOLDOWN
+
     val fleetShips = mutableListOf<FleetShip>()
     var isActive = false
     var arrivalTimer = 0f
@@ -300,19 +326,9 @@ class FleetSystem(
 
             val preferredOrbitRadius = if (ring == 0) OUTER_RADIUS else INNER_RADIUS
 
-            val weaponCooldown = when (shipDef.startingWeaponId) {
-                "pulse_cannon"    -> 0.5f
-                "scatter_shot"    -> 1.0f
-                "homing_missiles" -> 1.0f
-                "needle_gun"      -> 0.25f
-                "nova_blast"      -> 4.0f
-                "flak_cannon"     -> 1.0f
-                "solar_storm"     -> 2.0f
-                "space_mines"     -> 2.0f
-                "cluster_bomb"    -> 2.0f
-                "railgun"         -> 1.5f
-                else              -> 1.5f
-            }
+            // The player's own weapon at L1, at 0 damage (owner, 2026-10-20), at its own L1 rate.
+            val weapon = shotWeaponFor(shipDef.startingWeaponId)
+            val weaponCooldown = weapon?.getCooldown(fleetNeutralState) ?: NO_SHOT_COOLDOWN
 
             fleetShips.add(FleetShip(
                 shipId = shipId,
@@ -326,7 +342,8 @@ class FleetSystem(
                 fireTimer = Random.nextFloat() * weaponCooldown,
                 preferredOrbitRadius = preferredOrbitRadius,
                 ring = ring,
-                ringIndex = ringIndex
+                ringIndex = ringIndex,
+                weapon = weapon
             ))
         }
 
@@ -635,143 +652,43 @@ class FleetSystem(
     }
 
     private fun fireAtBoss(fs: FleetShip) {
-        fireWeaponAtBoss(fs.position.x, fs.position.y, fs.weaponId, fs.color)
+        fireMirrored(fs.position, fs.weaponId, fs.weapon, fs.color)
     }
 
     /**
-     * Fires [weaponId] from ([originX], [originY]) at the boss using the fleet's
-     * per-weapon projectile patterns. Reused by Past Astro during the charge.
+     * Fires [weaponId] from [origin] at the boss: the player's own L1 weapon at 0 damage, the
+     * fleet's shot. Used by Past Astro too, with weapons kept per id.
      */
-    fun fireWeaponAtBoss(originX: Float, originY: Float, weaponId: String, color: Int) {
-        if (!boss.isActive) return
-        val dx = boss.position.x - originX
-        val dy = boss.position.y - originY
-        val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
-        val dirX = dx / dist
-        val dirY = dy / dist
-        val spawnX = originX + dirX * 25f
-        val spawnY = originY + dirY * 25f
+    fun fireWeaponAtBoss(origin: Vector2, weaponId: String, color: Int) {
+        fireMirrored(origin, weaponId, pastAstroWeapon(weaponId), color)
+    }
 
-        when (weaponId) {
-            "homing_missiles" -> {
-                // Slower projectile with slight random spread to look homing-ish
-                val spread = (Random.nextFloat() - 0.5f) * 0.2f
-                val angle = atan2(dirY, dirX) + spread
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, cos(angle) * 350f, sin(angle) * 350f, ProjectileType.MISSILE, 30f, 4f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.target = boss
-                p.homingStrength = 3.5f
-            }
-            "scatter_shot" -> {
-                val baseAngle = atan2(dirY, dirX)
-                val spreadAngle = PI.toFloat() / 3f
-                repeat(5) {
-                    val angle = baseAngle + (Random.nextFloat() - 0.5f) * spreadAngle
-                    val p = projectilePool.obtain()
-                    p.initialize(spawnX, spawnY, cos(angle) * 500f, sin(angle) * 500f, ProjectileType.BULLET, 20f, 1.5f)
-                    p.isEnemyProjectile = false
-                    p.color = color
-                    p.radius = 3f
-                }
-            }
-            "energy_saw", "ion_orbiters" -> {
-                // Close range — no projectile, the visual of being close is enough
-                return
-            }
-            "needle_gun" -> {
-                // Rapid small shots
-                for (i in 0..2) {
-                    val offset = (i - 1) * 0.05f
-                    val angle = atan2(dirY, dirX) + offset
-                    val p = projectilePool.obtain()
-                    p.initialize(spawnX, spawnY, cos(angle) * 800f, sin(angle) * 800f, ProjectileType.BULLET, 15f, 2f)
-                    p.isEnemyProjectile = false
-                    p.color = color
-                    p.length = 14f
-                    p.piercing = true
-                    p.maxPierces = 3
-                }
-            }
-            "nova_blast" -> {
-                repeat(8) { i ->
-                    val angle = i * 2f * PI.toFloat() / 8f
-                    val p = projectilePool.obtain()
-                    p.initialize(spawnX, spawnY, cos(angle) * 540f, sin(angle) * 540f, ProjectileType.PLASMA, 0f, 0.3f)
-                    p.isEnemyProjectile = false
-                    p.color = color
-                    p.radius = 60f
-                    p.piercing = true
-                    p.maxPierces = 1000
-                }
-            }
-            "flak_cannon" -> {
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, dirX * 400f, dirY * 400f, ProjectileType.FLAK, 25f, 1.5f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.radius = 6f
-                p.explodeOnDeath = true
-                p.explosionRadius = 60f
-                p.explosionDamage = 15f
-                p.proximityFuse = true
-            }
-            "solar_storm" -> {
-                val p = projectilePool.obtain()
-                p.initialize(boss.position.x, boss.position.y, 0f, 0f, ProjectileType.LIGHTNING, 0f, 0.4f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.radius = 60f
-                p.bounceCount = 99
-            }
-            "space_mines" -> {
-                // Drop a slow-moving mine toward boss
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, dirX * 150f, dirY * 150f, ProjectileType.MINE, 35f, 4f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.radius = 12f
-                p.decelerationRate = 100f
-                p.explodeOnDeath = true
-                p.explosionRadius = 40f
-            }
-            "cluster_bomb" -> {
-                // Slow bomb lobbed toward boss
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, dirX * 200f, dirY * 200f, ProjectileType.TORPEDO, 60f, 6f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.radius = 12f
-                p.explodeOnDeath = true
-                p.explosionRadius = 80f
-                p.explosionDamage = 18f
-                p.bombletCount = 4
-                p.bombletExplosionRadius = 48f
-                p.bombletDamage = 8f
-            }
-            "railgun" -> {
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, dirX * 2000f, dirY * 2000f, ProjectileType.BULLET, 0f, 3f)
-                p.isEnemyProjectile = false
-                p.color = color
-                p.length = 20f
-                p.width = 11f
-                p.piercing = true
-                p.maxPierces = 2
-            }
-            else -> {
-                // Default: pulse cannon style
-                val p = projectilePool.obtain()
-                p.initialize(spawnX, spawnY, dirX * 600f, dirY * 600f, ProjectileType.BULLET, 30f, 2f)
-                p.isEnemyProjectile = false
-                p.color = color
-            }
+    private fun fireMirrored(origin: Vector2, weaponId: String, weapon: Weapon?, color: Int) {
+        if (!boss.isActive) return
+        // Close range: the saw's and orbiters' real instances only draw; there is no shot.
+        if (weaponId in NO_SHOT_WEAPONS) return
+
+        if (weaponId == "solar_storm") {
+            // The real Solar Storm never targets a shielded or invulnerable boss, and this boss is
+            // always invulnerable: keep the player's strike on it, at 0 damage.
+            val p = projectilePool.obtain()
+            p.initialize(boss.position.x, boss.position.y, 0f, 0f, ProjectileType.LIGHTNING, 0f, SolarStorm.STRIKE_SECONDS)
+            p.isEnemyProjectile = false
+            p.color = color
+            p.radius = SolarStorm.STRIKE_RADIUS
+            p.bounceCount = 99
+        } else {
+            weapon ?: return
+            weapon.cooldownTimer = 0f  // the fleet's own timer paces its shots
+            val aim = atan2(boss.position.y - origin.y, boss.position.x - origin.x)
+            shotTargets.clear()
+            shotTargets.add(boss)
+            weapon.fire(shotFirer.aimFrom(origin, aim), fleetNeutralState, projectilePool, shotTargets)
         }
 
         // Shield reacts the instant the shot is fired (no projectile travel-time gap).
         if (boss.shielded) {
-            val hit = shieldRingHit(originX, originY, boss.position.x, boss.position.y, Boss.FLEET_SHIELD_RING_RADIUS)
+            val hit = shieldRingHit(origin.x, origin.y, boss.position.x, boss.position.y, Boss.FLEET_SHIELD_RING_RADIUS)
             boss.spawnShieldSparks(hit[0], hit[1], hit[2], hit[3], color)
         }
 
@@ -849,6 +766,7 @@ class FleetSystem(
             fs.orbiterWeapon?.clearOrbiters()
         }
         fleetShips.clear()
+        pastAstroWeapons.clear()
         isActive = false
         arrivalTimer = 0f
         arrivalPhase = 0

@@ -1,327 +1,186 @@
 package com.astroloop.game.system
 
-import com.astroloop.game.entity.*
+import com.astroloop.game.core.GameState
 import com.astroloop.game.core.SoundManager
+import com.astroloop.game.data.EnemyType
+import com.astroloop.game.entity.*
+import com.astroloop.game.tuning.KnobsEnemies
+import com.astroloop.game.weapon.weapons.EnergySaw
+import com.astroloop.game.weapon.weapons.HomingMissiles
+import com.astroloop.game.weapon.weapons.IonOrbiters
+import com.astroloop.game.weapon.weapons.SolarStorm
+import com.astroloop.game.weapon.weapons.SpaceMines
 import kotlin.math.*
-import kotlin.random.Random
 
+/**
+ * Regular enemies fire the player's own weapon classes at L1 with no upgrades (owner, 2026-10-20:
+ * "exact copies of an L1 weapon on a ship without upgrades"). What stays enemy-only: when each
+ * type fires, that it aims at the player, that its shots are red, the Scorcher's warning ring,
+ * and the Phantom's damage knob.
+ */
 class EnemyWeaponSystem(
     private val projectilePool: EntityPool<Projectile>
 ) {
     companion object {
         val CORRUPTION_COLOR = 0xFFAA2222.toInt()
+
+        /** The Shotgunner only fires this close. */
+        const val SCATTER_FIRE_RANGE = 150f
+        /** The Bomber only fires this close (it dives in first). */
+        const val NOVA_FIRE_RANGE = 80f
+        /** The Weaver only drops mines while moving at least this fast (px/s). */
+        const val MINE_DROP_MIN_SPEED = 50f
+        /** The Phantom fires only this far into its aim phase (it decloaks over the first 0.5 s). */
+        const val RAIL_CHARGE_SECONDS = 1.0f
+        /** The Scorcher only targets the player this close. */
+        const val SOLAR_RANGE = 800f
+        /** Out of range, the Scorcher looks again after this long (s). */
+        const val SOLAR_RETRY_SECONDS = 0.5f
+        /** The warning ring before a Scorcher's strike lands (s). */
+        const val SOLAR_TELEGRAPH_SECONDS = 0.5f
+
+        /**
+         * True when [p] may hurt the player: a live enemy shot, except an orbiter fading out
+         * after its Guardian was removed (its last 0.5 s), or any shot being force-faded out.
+         */
+        fun canHitPlayer(p: Projectile): Boolean =
+            p.isActive && p.isEnemyProjectile && !p.shouldFadeOut &&
+                !(p.type == ProjectileType.ORBITER && p.lifetime - p.age <= 0.5f)
+
+        /**
+         * True when an enemy proximity-fused shell at ([x], [y]) is close enough to [ship] to burst:
+         * [Projectile.PROXIMITY_FUSE_RANGE] plus the ship's radius, the rule the player's shells
+         * use against their targets.
+         */
+        fun proximityFuseTriggered(x: Float, y: Float, ship: Entity): Boolean {
+            val dx = x - ship.position.x
+            val dy = y - ship.position.y
+            val range = Projectile.PROXIMITY_FUSE_RANGE + ship.radius
+            return dx * dx + dy * dy <= range * range
+        }
     }
 
-    fun update(enemies: List<EnemyShip>, ship: Ship, deltaTime: Float) {
+    /** No upgrades; red shots. Its damage multiplier is set per shot by [firingStateFor]. */
+    private val firingState = GameState.createNeutral().also { it.isCorruptionRun = true }
+    private val aimedFirer = AimedFirer(isEnemyFirer = true)
+    private val targets = ArrayList<Entity>(1)
+
+    /** The state [enemy]'s next shot fires with: no upgrades, and the Phantom's damage knob. */
+    fun firingStateFor(enemy: EnemyShip): GameState {
+        firingState.damageMultiplier =
+            if (enemy.type == EnemyType.SPECTER) KnobsEnemies.phantomDamage.value else 1f
+        // The Hunter's missiles fly at the knob's speed (multiplier is the only speed input).
+        val weapon = enemy.weapon
+        firingState.projectileSpeedMultiplier =
+            if (weapon is HomingMissiles) KnobsEnemies.missileSpeed.value / weapon.baseProjectileSpeed else 1f
+        return firingState
+    }
+
+    fun update(enemies: List<EnemyShip>, deltaTime: Float) {
         for (enemy in enemies) {
             if (!enemy.isActive || enemy.isWarping || enemy.isCrewmate) continue
-            if (enemy.weaponCooldown > 0f) {
-                enemy.weaponCooldown -= deltaTime
+            val weapon = enemy.weapon ?: continue
+            weapon.update(deltaTime)
+            when (weapon) {
+                is IonOrbiters -> weapon.updateOrbiters(enemy.position, deltaTime)
+                is SpaceMines -> weapon.updatePendingMines(deltaTime, projectilePool, firingStateFor(enemy))
             }
-            when (enemy.weaponId) {
-                "ion_orbiters" -> updateOrbiters(enemy, deltaTime)
-            }
-            // Solar Storm telegraph: tick down and fire on expiry
+            // Solar Storm telegraph: tick down and strike on expiry
             if (enemy.solarTelegraphActive) {
                 enemy.solarTelegraphTimer -= deltaTime
                 if (enemy.solarTelegraphTimer <= 0f) {
                     enemy.solarTelegraphActive = false
-                    spawnSolarStrikeLightning(enemy, ship)
+                    if (weapon is SolarStorm) strike(enemy, weapon)
                 }
             }
         }
     }
 
     fun fire(enemy: EnemyShip, ship: Ship) {
-        if (enemy.weaponCooldown > 0f) return
+        val weapon = enemy.weapon ?: return
+        if (!weapon.canFire()) return
 
-        val dx = ship.position.x - enemy.position.x
-        val dy = ship.position.y - enemy.position.y
-        val dist = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
-        val dirX = dx / dist
-        val dirY = dy / dist
-        val spawnX = enemy.position.x + dirX * enemy.radius
-        val spawnY = enemy.position.y + dirY * enemy.radius
-
-        // Weapon-specific firing conditions
-        when (enemy.weaponId) {
-            "scatter_shot" -> if (dist > 150f) return  // Only fire at close range
-            "nova_blast" -> if (dist > 80f) return  // Only fire at point-blank (diver gets close first)
-            "space_mines" -> if (enemy.velocity.length() < 50f) return  // Only drop while moving
-            "energy_saw" -> return  // Never fires projectiles — damage via disc contact
-            "railgun" -> {
-                // Specter only fires when decloaked and aiming
-                if (enemy.isCloaked || enemy.chargeUpTimer < 1.0f) return
-            }
-            "ion_orbiters" -> { /* Always active — orbiters just exist */ }
-            // All other weapons: fire when in range and cooldown ready (no extra conditions)
-        }
-
-        when (enemy.weaponId) {
-            "pulse_cannon" -> firePulseCannon(enemy, spawnX, spawnY, dirX, dirY)
-            "scatter_shot" -> fireScatterShot(enemy, spawnX, spawnY, dirX, dirY)
-            "railgun" -> fireRailgun(enemy, spawnX, spawnY, dirX, dirY)
-            "needle_gun" -> fireNeedleGun(enemy, spawnX, spawnY, dirX, dirY)
-            "flak_cannon" -> fireFlakCannon(enemy, spawnX, spawnY, dirX, dirY)
-            "homing_missiles" -> fireHomingMissiles(enemy, spawnX, spawnY, dirX, dirY, ship)
-            "cluster_bomb" -> fireClusterBomb(enemy, spawnX, spawnY, dirX, dirY)
-            "space_mines" -> fireSpaceMines(enemy)
-            "nova_blast" -> fireNovaBlast(enemy)
-            "solar_storm" -> fireSolarStorm(enemy, ship)
-            "ion_orbiters" -> fireOrbiters(enemy)
-            "energy_saw" -> { /* No-op: damage via disc contact */ }
-        }
-        // Enemy fire reuses the player's weapon sound at reduced volume (off-beat — enemies
-        // fire on their own cooldowns). energy_saw returns earlier (contact damage, no shot).
-        if (enemy.weaponId != "energy_saw") {
-            SoundManager.playSFX("sfx_weapon_${enemy.weaponId}", 0.4f)
-        }
-    }
-
-    fun onEnemyRemoved(enemy: EnemyShip) {
-        for (orbiter in enemy.orbiterProjectiles) {
-            orbiter.isActive = false
-        }
-        enemy.orbiterProjectiles.clear()
-    }
-
-    // === SIMPLE PROJECTILE WEAPONS ===
-
-    private fun firePulseCannon(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val p = projectilePool.obtain()
-        p.initialize(spawnX, spawnY, dirX * 450f, dirY * 450f, ProjectileType.BULLET, enemy.weaponDamage, 3f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 3f
-        enemy.weaponCooldown = 1.0f
-    }
-
-    private fun fireScatterShot(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val baseAngle = atan2(dirY, dirX)
-        val spreadCount = 3
-        val totalSpread = 0.5f
-        for (i in 0 until spreadCount) {
-            val angle = baseAngle + (i - (spreadCount - 1) / 2f) * (totalSpread / (spreadCount - 1))
-            val p = projectilePool.obtain()
-            p.initialize(spawnX, spawnY, cos(angle) * 400f, sin(angle) * 400f, ProjectileType.BULLET, enemy.weaponDamage, 1.5f)
-            p.isEnemyProjectile = true
-            p.color = CORRUPTION_COLOR
-            p.radius = 3f
-        }
-        enemy.weaponCooldown = 1.2f
-    }
-
-    private fun fireRailgun(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val p = projectilePool.obtain()
-        p.initialize(spawnX, spawnY, dirX * 1200f, dirY * 1200f, ProjectileType.BULLET, enemy.weaponDamage * 2.5f, 2f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 10f          // mirror the player L5 rail width
-        p.piercing = true
-        p.length = 40f
-        p.width = 11f
-        enemy.weaponCooldown = 2.5f
-    }
-
-    private fun fireNeedleGun(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val baseAngle = atan2(dirY, dirX)
-        val spread = 0.08f
-        val angle = baseAngle + (Random.nextFloat() - 0.5f) * spread
-        val p = projectilePool.obtain()
-        p.initialize(spawnX, spawnY, cos(angle) * 600f, sin(angle) * 600f, ProjectileType.BULLET, enemy.weaponDamage * 0.3f, 2f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 2f
-        enemy.weaponCooldown = 0.15f
-    }
-
-    private fun fireFlakCannon(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val baseAngle = atan2(dirY, dirX)
-        for (i in 0..1) {
-            val angle = baseAngle + (i - 0.5f) * 0.15f
-            val p = projectilePool.obtain()
-            p.initialize(spawnX, spawnY, cos(angle) * 350f, sin(angle) * 350f, ProjectileType.FLAK, enemy.weaponDamage, 2f)
-            p.isEnemyProjectile = true
-            p.color = CORRUPTION_COLOR
-            p.radius = 6f  // Match player flak size
-            p.explodeOnDeath = true
-            p.explosionRadius = 35f
-            p.explosionDamage = enemy.weaponDamage * 0.5f
-        }
-        enemy.weaponCooldown = 1.5f
-    }
-
-    private fun fireHomingMissiles(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float, ship: Ship) {
-        val p = projectilePool.obtain()
-        p.initialize(spawnX, spawnY, dirX * 200f, dirY * 200f, ProjectileType.MISSILE, enemy.weaponDamage, 4f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 4f
-        p.homingStrength = 1.5f
-        p.target = ship
-        enemy.weaponCooldown = 2.0f
-    }
-
-    private fun fireClusterBomb(enemy: EnemyShip, spawnX: Float, spawnY: Float, dirX: Float, dirY: Float) {
-        val p = projectilePool.obtain()
-        p.initialize(spawnX, spawnY, dirX * 200f, dirY * 200f, ProjectileType.TORPEDO, enemy.weaponDamage, 6f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 12f
-        p.explodeOnDeath = true
-        p.explosionRadius = 80f
-        p.explosionDamage = enemy.weaponDamage * 0.3f
-        p.bombletCount = 4
-        p.bombletDamage = enemy.weaponDamage * 0.3f
-        p.bombletExplosionRadius = 48f
-        p.hasFragments = true
-        p.fragmentDamage = enemy.weaponDamage * 0.15f
-
-        enemy.weaponCooldown = 2.5f
-    }
-
-    // === SPECIAL WEAPONS ===
-
-    private fun fireSpaceMines(enemy: EnemyShip) {
-        val moveAngle = atan2(enemy.velocity.y, enemy.velocity.x)
-        val behindX = enemy.position.x - cos(moveAngle) * enemy.radius
-        val behindY = enemy.position.y - sin(moveAngle) * enemy.radius
-        val p = projectilePool.obtain()
-        p.initialize(behindX, behindY, 0f, 0f, ProjectileType.MINE, enemy.weaponDamage, 8f)
-        p.isEnemyProjectile = true
-        p.color = CORRUPTION_COLOR
-        p.radius = 12f  // Match player mine size
-        p.explodeOnDeath = true
-        p.explosionRadius = 50f
-        p.explosionDamage = enemy.weaponDamage
-        enemy.weaponCooldown = 2.0f
-    }
-
-    private fun fireNovaBlast(enemy: EnemyShip) {
-        val ringCount = 8
-        val blastRadius = 180f
-        for (i in 0 until ringCount) {
-            val angle = (2 * PI.toFloat() * i / ringCount)
-            val p = projectilePool.obtain()
-            p.initialize(
-                x = enemy.position.x, y = enemy.position.y,
-                vx = cos(angle) * blastRadius * 3f, vy = sin(angle) * blastRadius * 3f,
-                projectileType = ProjectileType.PLASMA,
-                projectileDamage = enemy.weaponDamage,
-                projectileLifetime = 0.3f
-            )
-            p.weaponId = "nova_blast"
-            p.radius = blastRadius / 3
-            p.piercing = true
-            p.maxPierces = 1000
-            p.isEnemyProjectile = true
-            p.color = CORRUPTION_COLOR
-        }
-        enemy.weaponCooldown = 4.0f
-    }
-
-    private fun fireSolarStorm(enemy: EnemyShip, ship: Ship) {
         val dx = ship.position.x - enemy.position.x
         val dy = ship.position.y - enemy.position.y
         val dist = sqrt(dx * dx + dy * dy)
-        if (dist > 800f) {
-            enemy.weaponCooldown = 0.5f
-            return
+
+        // When each enemy fires is its own rule; what it fires is the player's weapon.
+        when (weapon) {
+            is EnergySaw -> return  // contact damage, in GameSurfaceView
+            is SolarStorm -> {
+                startSolarTelegraph(enemy, weapon, ship, dist)
+                return
+            }
+            else -> {}
         }
-        // Lock target position and start 0.5s telegraph — strike lands after the warning ring
-        enemy.solarTelegraphActive = true
-        enemy.solarTelegraphTimer = 0.5f
-        enemy.solarTelegraphX = ship.position.x
-        enemy.solarTelegraphY = ship.position.y
-        enemy.weaponCooldown = 2.4f
+        when (enemy.weaponId) {
+            "scatter_shot" -> if (dist > SCATTER_FIRE_RANGE) return
+            "nova_blast" -> if (dist > NOVA_FIRE_RANGE) return
+            "space_mines" -> if (enemy.velocity.length() < MINE_DROP_MIN_SPEED) return
+            "railgun" -> if (enemy.isCloaked || enemy.chargeUpTimer < RAIL_CHARGE_SECONDS) return
+        }
+
+        // Shots aim at the player. Mines drop behind a moving enemy, as the player's drop behind
+        // the player (whose ship faces the way it moves).
+        val aim = if (weapon is SpaceMines) atan2(enemy.velocity.y, enemy.velocity.x) else atan2(dy, dx)
+        targets.clear()
+        targets.add(ship)
+        weapon.fire(aimedFirer.aimFrom(enemy, aim), firingStateFor(enemy), projectilePool, targets)
+        // Enemy fire reuses the player's weapon sound at reduced volume (off-beat: enemies fire on
+        // their own cooldowns).
+        SoundManager.playSFX("sfx_weapon_${enemy.weaponId}", 0.4f)
     }
 
-    private fun spawnSolarStrikeLightning(enemy: EnemyShip, ship: Ship) {
+    /**
+     * The Scorcher cannot call [SolarStorm.fire]: it damages its target directly, which would skip
+     * the player's invulnerability, dodge and death check. It locks the player's position, shows
+     * the warning ring, and [strike]s when the ring runs out, on the player's L1 cooldown.
+     */
+    private fun startSolarTelegraph(enemy: EnemyShip, weapon: SolarStorm, ship: Ship, dist: Float) {
+        if (dist > SOLAR_RANGE) {
+            weapon.cooldownTimer = SOLAR_RETRY_SECONDS
+            return
+        }
+        enemy.solarTelegraphActive = true
+        enemy.solarTelegraphTimer = SOLAR_TELEGRAPH_SECONDS
+        enemy.solarTelegraphX = ship.position.x
+        enemy.solarTelegraphY = ship.position.y
+        // Counted from the ring's start: a strike every L1 cooldown.
+        weapon.cooldownTimer = weapon.getCooldown(firingStateFor(enemy))
+        SoundManager.playSFX("sfx_weapon_${enemy.weaponId}", 0.4f)
+    }
+
+    /** The player's L1 Solar Storm strike, landing through the normal enemy-projectile hit path. */
+    private fun strike(enemy: EnemyShip, weapon: SolarStorm) {
         val lightning = projectilePool.obtain()
         lightning.initialize(
             x = enemy.solarTelegraphX, y = enemy.solarTelegraphY,
             vx = 0f, vy = 0f,
             projectileType = ProjectileType.LIGHTNING,
-            projectileDamage = enemy.weaponDamage,
-            projectileLifetime = 0.4f
+            projectileDamage = weapon.getDamage(firingStateFor(enemy)),
+            projectileLifetime = SolarStorm.STRIKE_SECONDS
         )
         lightning.isEnemyProjectile = true
         lightning.color = CORRUPTION_COLOR
-        lightning.radius = 60f
-        lightning.bounceCount = 99
+        lightning.radius = SolarStorm.STRIKE_RADIUS
+        lightning.bounceCount = 99  // instant-hit marker, as on the player's strike
     }
 
-    // === STATEFUL WEAPONS ===
-
-    private fun fireOrbiters(enemy: EnemyShip) {
-        enemy.orbiterProjectiles.removeAll { !it.isActive }
-        val targetCount = 2
-        val damage = enemy.weaponDamage
-        val orbitRadius = 70f
-
-        while (enemy.orbiterProjectiles.size < targetCount) {
-            val spawnAngle = if (enemy.orbiterProjectiles.isNotEmpty()) {
-                enemy.orbiterProjectiles.last().orbitAngle
-            } else {
-                enemy.orbiterBaseAngle
-            }
-            val projectile = projectilePool.obtain()
-            projectile.initialize(
-                x = enemy.position.x, y = enemy.position.y,
-                vx = 0f, vy = 0f,
-                projectileType = ProjectileType.ORBITER,
-                projectileDamage = damage,
-                projectileLifetime = 999f
-            )
-            projectile.weaponId = "ion_orbiters"
-            projectile.orbitRadius = orbitRadius
-            projectile.orbitSpeed = 0f
-            projectile.orbitAngle = spawnAngle
-            projectile.radius = 10f
-            projectile.piercing = true
-            projectile.maxPierces = 1000
-            projectile.isEnemyProjectile = true
-            projectile.color = CORRUPTION_COLOR
-            projectile.fadeAlpha = 0f
-            enemy.orbiterProjectiles.add(projectile)
-        }
-
-        val total = enemy.orbiterProjectiles.size
-        for ((index, orbiter) in enemy.orbiterProjectiles.withIndex()) {
-            val targetAngle = enemy.orbiterBaseAngle + (2f * PI.toFloat() * index / total)
-            orbiter.orbitAngle = lerpAngle(orbiter.orbitAngle, targetAngle, 0.15f)
-            orbiter.orbitRadius = orbitRadius
-            orbiter.damage = damage
-        }
-        enemy.weaponCooldown = 3f
+    fun onEnemyRemoved(enemy: EnemyShip) {
+        // Orbiters fade out over 0.5 s rather than vanish (no instant disappearance).
+        (enemy.weapon as? IonOrbiters)?.fadeOutOrbiters()
     }
 
-    private fun updateOrbiters(enemy: EnemyShip, deltaTime: Float) {
-        enemy.orbiterProjectiles.removeAll { !it.isActive }
-        enemy.orbiterBaseAngle += enemy.orbiterOrbitSpeed * deltaTime
+    /**
+     * The contact saw [enemy] flies, if any: the Rusher's, or a crewmate's on the Ripper (UNIT-7).
+     * Its `cooldownTimer` is the contact tick.
+     */
+    fun sawOf(enemy: EnemyShip): EnergySaw? = enemy.weapon as? EnergySaw
 
-        val total = enemy.orbiterProjectiles.size
-        for ((index, orbiter) in enemy.orbiterProjectiles.withIndex()) {
-            val targetAngle = enemy.orbiterBaseAngle + (2f * PI.toFloat() * index / total)
-            orbiter.orbitAngle = lerpAngle(orbiter.orbitAngle, targetAngle, 0.15f)
-            orbiter.position.x = enemy.position.x + cos(orbiter.orbitAngle) * orbiter.orbitRadius
-            orbiter.position.y = enemy.position.y + sin(orbiter.orbitAngle) * orbiter.orbitRadius
-        }
-    }
+    /** Damage per tick from [enemy]'s [saw]: the player's L1 saw. */
+    fun sawDamage(enemy: EnemyShip, saw: EnergySaw): Float = saw.getDamage(firingStateFor(enemy))
 
-    fun getSawDiscPositions(enemy: EnemyShip): List<Pair<Float, Float>> {
-        val positions = mutableListOf<Pair<Float, Float>>()
-        positions.add(Pair(
-            enemy.position.x + cos(enemy.rotation) * enemy.sawReach,
-            enemy.position.y + sin(enemy.rotation) * enemy.sawReach
-        ))
-        return positions
-    }
-
-    private fun lerpAngle(from: Float, to: Float, t: Float): Float {
-        var diff = to - from
-        while (diff > PI.toFloat()) diff -= 2f * PI.toFloat()
-        while (diff < -PI.toFloat()) diff += 2f * PI.toFloat()
-        return from + diff * t
-    }
+    /** Where [enemy]'s saw disc sits: the player's L1 reach along the enemy's facing. */
+    fun getSawDiscPositions(enemy: EnemyShip): List<Pair<Float, Float>> =
+        sawOf(enemy)?.getDiscPositions(enemy.position.x, enemy.position.y, enemy.rotation) ?: emptyList()
 }

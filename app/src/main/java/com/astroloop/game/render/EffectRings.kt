@@ -7,7 +7,6 @@ import com.astroloop.game.entity.Boss
 import com.astroloop.game.system.VampiricLeecherSystem
 import com.astroloop.game.weapon.weapons.LingeringNova
 import com.astroloop.game.weapon.weapons.NovaBlast
-import kotlin.math.sin
 
 /**
  * The faint circles around the ship showing how far each effect reaches.
@@ -49,7 +48,7 @@ object EffectRings {
     /**
      * The rings the current state should show, in no particular order.
      *
-     * Cryo keys off `cryoSlowPercent` rather than the stack count because that is the flag the
+     * Cryo keys off `cryoCentreSlow` rather than the stack count because that is the flag the
      * shipped ring already used, and it is set for exactly the same condition.
      */
     fun ringsFor(state: GameState): List<Ring> {
@@ -58,7 +57,7 @@ object EffectRings {
             if (corrupted) Boss.CORRUPTION_COLOR else pilotColorFor(passiveId)
 
         val rings = ArrayList<Ring>(4)
-        if (state.cryoSlowPercent > 0f) {
+        if (state.cryoCentreSlow > 0f) {
             rings.add(Ring("cryo_field", state.getCryoRadius(), passiveColor("cryo_field")))
         }
         if (state.getPassiveStacks("magnet_field") > 0) {
@@ -66,7 +65,11 @@ object EffectRings {
         }
         if (state.getPassiveStacks("vampiric_core") > 0) {
             rings.add(
-                Ring("vampiric_core", VampiricLeecherSystem.LEECH_RANGE, passiveColor("vampiric_core"))
+                Ring(
+                    "vampiric_core",
+                    VampiricLeecherSystem.rangeFor(state.getPassiveStacks("vampiric_core")),
+                    passiveColor("vampiric_core")
+                )
             )
         }
         val novaLevel = state.weaponLevels["nova_blast"] ?: 0
@@ -140,8 +143,8 @@ object EffectRings {
     /** Blank degrees between neighbouring arcs, so the alternation reads as separate strokes. */
     const val ARC_GAP_DEGREES = 4f
 
-    const val ALPHA_BASE = 0.15f
-    const val ALPHA_PULSE = 0.05f
+    /** Every ring's opacity: steady, at the top of the old 0.10-0.20 pulse (owner, 2026-10-22). */
+    const val ALPHA = 0.20f
     const val STROKE_WIDTH = 2f
 
     /** How long the rings take to fade once the player dies. Shared with the leech stream so the
@@ -182,12 +185,8 @@ object EffectRings {
     }
 
     /**
-     * The shared opacity for every ring: a slow pulse in a deliberately faint band, scaled by the
-     * death fade. Keeping all four rings on one budget is what makes four of them at once readable.
-     *
-     * [timeSeconds] is passed in rather than read here so this stays pure; callers use the
-     * modulo'd clock, never raw millis.
+     * The shared opacity for every ring: steady and faint, scaled by the death fade. Keeping all
+     * the rings on one budget is what makes several of them at once readable.
      */
-    fun alpha(timeSeconds: Float, fadeAlpha: Float): Float =
-        (ALPHA_BASE + ALPHA_PULSE * sin(timeSeconds * 2f)) * fadeAlpha
+    fun alpha(fadeAlpha: Float): Float = ALPHA * fadeAlpha
 }

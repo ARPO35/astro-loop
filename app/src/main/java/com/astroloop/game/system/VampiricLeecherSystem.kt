@@ -1,6 +1,5 @@
 package com.astroloop.game.system
 
-import com.astroloop.game.core.GameConfig
 import com.astroloop.game.core.GameState
 import com.astroloop.game.entity.Asteroid
 import com.astroloop.game.entity.LeechParticle
@@ -30,8 +29,24 @@ class VampiricLeecherSystem(
         /** How long the stream takes to break off once the player dies. */
         const val DEATH_FADE_SECONDS = 0.25f
         const val TICK_INTERVAL = 0.2f
-        const val LEECH_RANGE = GameConfig.SHIP_BASE_SIZE * 4f  // 100f from asteroid edge
-        const val LEECH_PER_STACK = 0.1f
+        /**
+         * Defaults for the `vampiric_core.base_range` and `range_per_stack` knobs, measured from the
+         * asteroid's edge: 60 at one stack, growing to 140 at five (owner, 2026-10-22). Five stacks
+         * reach exactly as far as the flat 140 before; every stack drains the same [LEECH].
+         */
+        const val BASE_RANGE = 60f
+        const val RANGE_PER_STACK = 20f
+        /**
+         * Default for the `vampiric_core.leech` knob: HP per asteroid per tick, the same at any stack.
+         * 0.2 = 1 HP/s per asteroid, at most 6 HP/s; full-strength 0.5 from the first stack was
+         * too much healing (owner, 2026-10-22).
+         */
+        const val LEECH = 0.2f
+
+        /** How far the drain reaches with [stacks] stacks. Gameplay and the effect ring both read this. */
+        fun rangeFor(stacks: Int): Float =
+            KnobsPassives.vampiricBaseRange.value +
+                KnobsPassives.vampiricRangePerStack.value * (stacks.coerceAtLeast(1) - 1)
         // Rock asteroids have ±30% shape variance — push start past max spike (1.3×)
         private const val EDGE_SPAWN_MULTIPLIER = 1.35f
         const val PARTICLE_SPEED = 1.2f           // t-units/sec; full gap in ~0.83s
@@ -59,7 +74,7 @@ class VampiricLeecherSystem(
         }
     }
 
-    /** Distance from the ship to this asteroid's edge — the same measure LEECH_RANGE is in. */
+    /** Distance from the ship to this asteroid's edge — the same measure [rangeFor] is in. */
     private fun edgeDistance(ship: Ship, asteroid: Asteroid): Float {
         val dx = ship.position.x - asteroid.position.x
         val dy = ship.position.y - asteroid.position.y
@@ -73,13 +88,13 @@ class VampiricLeecherSystem(
      * from a rock the tick is not draining. The returned list is a reused buffer — consume it
      * before calling again.
      */
-    private fun collectTargets(ship: Ship, asteroids: List<Asteroid>): List<Asteroid> {
+    private fun collectTargets(ship: Ship, asteroids: List<Asteroid>, range: Float): List<Asteroid> {
         val cap = KnobsPassives.vampiricMaxTargets.value
         targetScratch.clear()
         for (asteroid in asteroids) {
             if (!asteroid.isActive || asteroid.fragmentImmunityTimer > 0f) continue
             val dist = edgeDistance(ship, asteroid)
-            if (dist > KnobsPassives.vampiricRange.value) continue
+            if (dist > range) continue
 
             // Insert into the nearest-first scratch buffer, capped at MAX_TARGETS, instead of
             // collecting everything and sorting — that boxed every comparison and delegated to
@@ -104,7 +119,7 @@ class VampiricLeecherSystem(
             spawnTimer -= deltaTime
             val newInRange = HashSet<Asteroid>()
 
-            for (asteroid in collectTargets(ship, asteroids)) {
+            for (asteroid in collectTargets(ship, asteroids, rangeFor(stacks))) {
                 val dx = ship.position.x - asteroid.position.x
                 val dy = ship.position.y - asteroid.position.y
                 val dist = sqrt(dx * dx + dy * dy)
@@ -161,10 +176,10 @@ class VampiricLeecherSystem(
     private fun tick(ship: Ship, asteroids: List<Asteroid>, stacks: Int) {
         if (ship.health >= ship.maxHealth) return
 
-        val leech = KnobsPassives.vampiricLeechPerStack.value * stacks
+        val leech = KnobsPassives.vampiricLeech.value
         var totalHeal = 0f
 
-        for (asteroid in collectTargets(ship, asteroids)) {
+        for (asteroid in collectTargets(ship, asteroids, rangeFor(stacks))) {
             asteroid.health -= leech
             totalHeal += leech
 

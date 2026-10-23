@@ -5,6 +5,8 @@ import com.astroloop.game.data.EnemyDefinitions
 import com.astroloop.game.data.EnemyType
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.util.Vector2
+import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.WeaponFactory
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -28,7 +30,6 @@ class EnemyShip : Entity(), Firer {
     // Combat stats
     var fireCooldown: Float = 0f
     var fireRate: Float = 1.5f
-    var weaponDamage: Float = 10f
 
     // AI parameters
     var preferredDistance: Float = 200f  // Distance to maintain from player
@@ -61,20 +62,10 @@ class EnemyShip : Entity(), Firer {
     private val dodgeDuration = 0.4f   // Longer, smoother dodge (was 0.15f)
     private val dodgeDistance = 40f     // Slightly wider arc (was 30f)
 
-    // Weapon system
+    // Weapon system: the player's own weapon at L1, no upgrades (owner, 2026-10-20), built fresh
+    // each spawn. EnemyWeaponSystem fires it. A crewmate carries its starting weapon here too.
     var weaponId: String = ""
-    var weaponCooldown: Float = 0f
-    var weaponFireRate: Float = 1.5f  // Weapon's base cooldown
-
-    // Ion Orbiter state (Sentinel enemies)
-    var orbiterProjectiles: MutableList<Projectile> = mutableListOf()
-    var orbiterBaseAngle: Float = 0f
-    var orbiterOrbitSpeed: Float = 3f
-
-    // Energy Saw state (Ripper enemies)
-    var sawDiscCount: Int = 1
-    var sawReach: Float = 80f
-    var sawDiscRadius: Float = 20f
+    var weapon: Weapon? = null
 
     // The Juke (Scout) - dash behavior
     var dashCooldown: Float = 0f
@@ -143,7 +134,6 @@ class EnemyShip : Entity(), Firer {
         tier = def.tier
         maxHealth = def.baseHealth
         speed = def.baseSpeed
-        weaponDamage = def.baseDamage
         fireRate = def.fireRate
         preferredDistance = def.preferredRange
         radius = GameConfig.SHIP_BASE_SIZE
@@ -154,9 +144,9 @@ class EnemyShip : Entity(), Firer {
         if (shipDef != null) {
             weaponId = shipDef.startingWeaponId
         }
-        weaponCooldown = 0f
-        orbiterProjectiles.clear()
-        orbiterBaseAngle = 0f
+        // A fresh L1 copy each spawn: nothing carries over from the pooled ship's last life
+        // (orbiters still fading, a half-run cooldown).
+        weapon = WeaponFactory.createWeapon(weaponId)
 
         health = maxHealth
         isActive = true
@@ -428,14 +418,7 @@ class EnemyShip : Entity(), Firer {
 
         // Weapon system
         weaponId = ""
-        weaponCooldown = 0f
-        weaponFireRate = 1.5f
-        orbiterProjectiles.clear()
-        orbiterBaseAngle = 0f
-        orbiterOrbitSpeed = 3f
-        sawDiscCount = 1
-        sawReach = 80f
-        sawDiscRadius = 20f
+        weapon = null
 
         // The Juke (Scout)
         dashCooldown = 0f

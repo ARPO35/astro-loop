@@ -15,7 +15,6 @@ data class EnemyDef(
     val unlockTime: Float,      // Seconds until this enemy can spawn
     val baseHealth: Float,
     val baseSpeed: Float,
-    val baseDamage: Float,
     val fireRate: Float,        // Cooldown in seconds
     val preferredRange: Float,
     val upgradeDropCount: Int
@@ -33,7 +32,6 @@ object EnemyDefinitions {
             unlockTime = 0f,
             baseHealth = 25f,
             baseSpeed = 250f,
-            baseDamage = 6f,
             fireRate = 2.0f,
             preferredRange = 250f,
             upgradeDropCount = 1
@@ -46,7 +44,6 @@ object EnemyDefinitions {
             unlockTime = 30f,
             baseHealth = 30f,
             baseSpeed = 230f,
-            baseDamage = 8f,
             fireRate = 1.8f,
             preferredRange = 280f,
             upgradeDropCount = 1
@@ -59,7 +56,6 @@ object EnemyDefinitions {
             unlockTime = 60f,
             baseHealth = 40f,
             baseSpeed = 180f,
-            baseDamage = 10f,
             fireRate = 2.2f,
             preferredRange = 150f,
             upgradeDropCount = 1
@@ -74,7 +70,6 @@ object EnemyDefinitions {
             unlockTime = 120f,
             baseHealth = 60f,
             baseSpeed = 140f,
-            baseDamage = 10f,
             fireRate = 1.5f,
             preferredRange = 180f,
             upgradeDropCount = 1
@@ -87,7 +82,6 @@ object EnemyDefinitions {
             unlockTime = 180f,
             baseHealth = 50f,
             baseSpeed = 200f,
-            baseDamage = 12f,
             fireRate = 1.2f,
             preferredRange = 220f,
             upgradeDropCount = 1
@@ -100,7 +94,6 @@ object EnemyDefinitions {
             unlockTime = 240f,
             baseHealth = 70f,
             baseSpeed = 150f,
-            baseDamage = 15f,
             fireRate = 2.0f,
             preferredRange = 300f,
             upgradeDropCount = 1
@@ -115,7 +108,6 @@ object EnemyDefinitions {
             unlockTime = 300f,
             baseHealth = 100f,
             baseSpeed = 150f,
-            baseDamage = 15f,
             fireRate = 1.8f,
             preferredRange = 200f,
             upgradeDropCount = 1
@@ -128,7 +120,6 @@ object EnemyDefinitions {
             unlockTime = 330f,
             baseHealth = 80f,
             baseSpeed = 180f,
-            baseDamage = 12f,
             fireRate = 0.8f,
             preferredRange = 250f,
             upgradeDropCount = 1
@@ -141,7 +132,6 @@ object EnemyDefinitions {
             unlockTime = 360f,
             baseHealth = 120f,
             baseSpeed = 130f,
-            baseDamage = 20f,
             fireRate = 2.5f,
             preferredRange = 160f,
             upgradeDropCount = 1
@@ -156,7 +146,6 @@ object EnemyDefinitions {
             unlockTime = 420f,
             baseHealth = 200f,
             baseSpeed = 100f,
-            baseDamage = 25f,
             fireRate = 2.0f,
             preferredRange = 180f,
             upgradeDropCount = 1
@@ -169,7 +158,6 @@ object EnemyDefinitions {
             unlockTime = 450f,
             baseHealth = 100f,
             baseSpeed = 250f,
-            baseDamage = 30f,
             fireRate = 0.6f,
             preferredRange = 80f,
             upgradeDropCount = 1
@@ -182,7 +170,6 @@ object EnemyDefinitions {
             unlockTime = 480f,
             baseHealth = 120f,
             baseSpeed = 200f,
-            baseDamage = 20f,
             fireRate = 1.5f,
             preferredRange = 350f,
             upgradeDropCount = 1

@@ -231,7 +231,7 @@ class BossSystem(
         val aimDir = boss.getAimDirection()
         // One report per volley, slightly louder than a regular enemy (they fire at 0.4f)
         SoundManager.playSFX("sfx_weapon_railgun", 0.5f)
-        // Two shots of RAIL_DAMAGE, so a volley lands the same 80 the player's Railgun lands in
+        // Two shots of RAIL_DAMAGE, so a volley lands the same damage the player's Railgun (its damage knob) lands in
         // one. That total is the only thing the two weapons share — this is not a tuned-down
         // Railgun, it is a different weapon:
         //   - half the speed (RAIL_SPEED 800 against the Railgun's 2000)

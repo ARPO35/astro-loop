@@ -29,8 +29,8 @@ class TuningEditorActivityTest {
         val activity = Robolectric.buildActivity(TuningEditorActivity::class.java, intent).setup().get()
         assertEquals(EditorModel.IN_THIS_RUN, activity.headerTitles().first())
         activity.pressPlus("railgun.damage")
-        assertEquals(85f, KnobsWeapons.railgun.damage.value, 0.001f)
-        assertEquals(85f, LabApp.presets.active()!!.payload.values["railgun.damage"]!!, 0.001f)
+        assertEquals(110f, KnobsWeapons.railgun.damage.value, 0.001f)
+        assertEquals(110f, LabApp.presets.active()!!.payload.values["railgun.damage"]!!, 0.001f)
     }
 
     @Test
@@ -106,7 +106,7 @@ class TuningEditorActivityTest {
             .putExtra(TuningEditorActivity.EXTRA_WEAPONS, arrayOf("scatter_shot"))
             .putExtra(TuningEditorActivity.EXTRA_WEAPON_LEVELS, intArrayOf(3))
         val activity = Robolectric.buildActivity(TuningEditorActivity::class.java, intent).setup().get()
-        assertEquals("Fires per level: 5 · 7 · 9 · 11 · 13 (+1 with Duplicator)", activity.effectiveText("scatter_shot.count"))
+        assertEquals("Fires per level: 8 · 11 · 14 · 17 · 20 (+1 with Duplicator)", activity.effectiveText("scatter_shot.count"))
     }
 
     @Test

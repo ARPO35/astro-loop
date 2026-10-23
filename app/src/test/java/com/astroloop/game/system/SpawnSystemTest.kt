@@ -77,15 +77,15 @@ class SpawnSystemTest {
     }
 
     @Test
-    fun `health factor doubles every 4 and a half minutes past the ramp start`() {
-        assertEquals(2.0f, SpawnSystem.asteroidHealthFactor(750f, true), 0.01f)   // 12.5 min
-        assertEquals(4.0f, SpawnSystem.asteroidHealthFactor(1020f, true), 0.01f)  // 17.0 min
-        assertEquals(8.0f, SpawnSystem.asteroidHealthFactor(1290f, true), 0.01f)  // 21.5 min
+    fun `health factor doubles every 4 minutes past the ramp start`() {
+        assertEquals(2.0f, SpawnSystem.asteroidHealthFactor(720f, true), 0.01f)   // 12 min
+        assertEquals(4.0f, SpawnSystem.asteroidHealthFactor(960f, true), 0.01f)   // 16 min
+        assertEquals(8.0f, SpawnSystem.asteroidHealthFactor(1200f, true), 0.01f)  // 20 min
     }
 
     @Test
     fun `health factor is uncapped so every run eventually ends`() {
-        // 40 minutes: 2^((40-8)/4.5) = 2^7.111 ~ 138
+        // 40 minutes: 2^((40-8)/4) = 2^8 = 256
         assertTrue(
             "Health must keep compounding with no ceiling",
             SpawnSystem.asteroidHealthFactor(2400f, true) > 100f
@@ -94,9 +94,9 @@ class SpawnSystemTest {
 
     @Test
     fun `asteroids spawn with scaled health in astro loop mode`() {
-        // 17 minutes into an Astro Loop run: factor 4, so a LARGE rock is 200 not 50.
+        // 16 minutes into an Astro Loop run: factor 4, so a LARGE rock is 200 not 50.
         // METAL is doubled at spawn, so assert on the ratio rather than an absolute.
-        val spawned = spawnBatch(survivalTime = 1020f, astroLoop = true)
+        val spawned = spawnBatch(survivalTime = 960f, astroLoop = true)
         assertTrue("Expected at least one asteroid", spawned.isNotEmpty())
         spawned.forEach {
             val baseline = if (it.type == com.astroloop.game.entity.AsteroidType.METAL) 100f else 50f
@@ -107,7 +107,7 @@ class SpawnSystemTest {
 
     @Test
     fun `asteroids spawn at base health in a normal run`() {
-        // Same 17 minutes, normal mode: untouched, because normal pacing is authored elsewhere.
+        // 17 minutes, normal mode: untouched, because normal pacing is authored elsewhere.
         val spawned = spawnBatch(survivalTime = 1020f, astroLoop = false)
         assertTrue("Expected at least one asteroid", spawned.isNotEmpty())
         spawned.forEach {

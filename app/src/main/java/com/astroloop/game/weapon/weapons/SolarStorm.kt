@@ -14,6 +14,13 @@ class SolarStorm : Weapon(
     override val knobs = KnobsWeapons.solarStorm
     override val beatPhaseOffsetMs: Long = 500L
 
+    companion object {
+        /** A strike's hit and draw radius. The Scorcher's and the fleet's strikes use it too. */
+        const val STRIKE_RADIUS = 60f
+        /** How long a strike's lightning stays up (s). */
+        const val STRIKE_SECONDS = 0.4f
+    }
+
     override fun getDamage(state: GameState): Float = baseDamage * state.damageMultiplier
 
     private fun getTargetCount(): Int = baseProjectileCount + (level - 1)
@@ -67,12 +74,12 @@ class SolarStorm : Weapon(
                 vy = 0f,
                 projectileType = ProjectileType.LIGHTNING,
                 projectileDamage = targetDamage,  // Store damage for damage number display (includes crit)
-                projectileLifetime = 0.4f  // Slightly longer for dramatic effect
+                projectileLifetime = STRIKE_SECONDS
             )
             projectile.isEnemyProjectile = firer.isEnemyFirer
             projectile.weaponId = id
             projectile.color = weaponColor
-            projectile.radius = 60f  // Bigger, more dramatic effect
+            projectile.radius = STRIKE_RADIUS
             projectile.bounceCount = 99  // Mark as instant-hit (won't fork or do collision damage)
             projectile.isCrit = isCrit
         }

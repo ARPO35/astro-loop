@@ -33,8 +33,8 @@ android {
         applicationId = "com.astroloop.game"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,8 +48,8 @@ android {
         create("tuning") {
             dimension = "edition"
             applicationIdSuffix = ".tuning"
-            versionCode = 1
-            versionName = "1.5-lab.1"
+            versionCode = 2
+            versionName = "1.5-lab.2"
             minSdk = 26
             buildConfigField("boolean", "LAB", "true")
         }

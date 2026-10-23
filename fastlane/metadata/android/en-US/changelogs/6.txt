@@ -1,0 +1,11 @@
+The balance patch: weapons and passives retuned, using numbers from Astro Loop Lab.
+
+Enemy weapon rework: most of them hit harder than before.
+
+Android TV: now on the TV home screen.
+
+Weapons fire on the beat better, slightly faster than in 1.4.
+
+Ion Orbiters and Frost Ring hit each target once per pass (both nerfed). No more Energy Saw shards.
+
+Fixed: leaving the app while paused no longer restarts the music, and a certain cutscene no longer gets stuck if you hang out south.

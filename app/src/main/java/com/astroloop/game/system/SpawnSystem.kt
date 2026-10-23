@@ -8,8 +8,11 @@ import com.astroloop.game.entity.*
 import com.astroloop.game.tuning.KnobsAsteroids
 import com.astroloop.game.util.Vector2
 import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 class SpawnSystem(
@@ -24,11 +27,28 @@ class SpawnSystem(
         const val HEALTH_RAMP_START_MINUTES = 8f
 
         /** Minutes for asteroid health to double once the ramp has started. */
-        const val HEALTH_RAMP_DOUBLING_MINUTES = 4.5f
+        const val HEALTH_RAMP_DOUBLING_MINUTES = 4.0f
 
         const val DAMAGE_RAMP_START_MINUTES = 8f
         const val DAMAGE_RAMP_PER_MINUTE = 6f
         const val DAMAGE_RAMP_MAX_BONUS = 100f
+
+        /**
+         * A point spread evenly over the disc of [radius] around the origin, from two uniform draws
+         * [u] and [v] in [0, 1). New rocks aim at the ship plus this offset (#58), so they cross
+         * near the player instead of all converging on one spot. The square root on [u] keeps the
+         * spread even by area; without it most aim points would bunch at the centre.
+         */
+        fun aimOffset(radius: Float, u: Float, v: Float): Vector2 {
+            if (radius <= 0f) return Vector2(0f, 0f)
+            val r = radius * sqrt(u)
+            val theta = 2f * PI.toFloat() * v
+            return Vector2(cos(theta) * r, sin(theta) * r)
+        }
+
+        /** The aim spread for a new rock of [type]: Magnetic rocks hunt the ship, so they get none. */
+        fun aimRadiusFor(type: AsteroidType): Float =
+            if (type == AsteroidType.MAGNETIC) 0f else KnobsField.aimRadius.value
 
         fun asteroidCount(mult: Float): Int = mult.roundToInt().coerceIn(1, 3)
 
@@ -140,8 +160,14 @@ class SpawnSystem(
         // Determine asteroid type based on time
         val type = getRandomAsteroidType(state.survivalTime)
 
-        // Determine direction toward ship
-        val direction = Vector2(ship.position.x - spawnPos.x, ship.position.y - spawnPos.y).normalize()
+        // Aim at a random point near the ship rather than dead at it (#58). Draws only when there
+        // is a spread, so radius 0 keeps the old random sequence as well as the old aim.
+        val aimRadius = aimRadiusFor(type)
+        val offset = if (aimRadius > 0f) aimOffset(aimRadius, Random.nextFloat(), Random.nextFloat()) else Vector2(0f, 0f)
+        val direction = Vector2(
+            ship.position.x + offset.x - spawnPos.x,
+            ship.position.y + offset.y - spawnPos.y
+        ).normalize()
 
         asteroid.initialize(
             x = spawnPos.x,
@@ -239,9 +265,12 @@ class SpawnSystem(
             val angle = (2 * PI * i / count + Random.nextFloat() * 0.5f).toFloat()
             val direction = Vector2.fromAngle(angle)
 
+            // Start inside the parent's outline and fly out (#58). On the rim, the nearest
+            // fragment appeared closer to the player than the rock's own edge had been.
+            val startDistance = parent.radius * KnobsAsteroids.fragmentOffset.value
             asteroid.initialize(
-                x = parent.position.x + direction.x * parent.radius,
-                y = parent.position.y + direction.y * parent.radius,
+                x = parent.position.x + direction.x * startDistance,
+                y = parent.position.y + direction.y * startDistance,
                 asteroidSize = nextSize,
                 asteroidType = parent.type,
                 direction = direction

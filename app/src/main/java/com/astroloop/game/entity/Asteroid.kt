@@ -38,6 +38,8 @@ class Asteroid : Entity() {
     /** Astro Loop damage ramp, applied at spawn. See SpawnSystem.asteroidDamageBonus. */
     var damageBonus: Float = 0f
     var fragmentImmunityTimer: Float = 0f
+    /** Its speed the first time it met a Cryo Field (0 = not yet). See CryoSlow.slowRock. */
+    var cryoBaseSpeed: Float = 0f
 
     data class TrailPoint(val x: Float, val y: Float, val timestamp: Float)
     val trailPoints: MutableList<TrailPoint> = mutableListOf()
@@ -93,6 +95,8 @@ class Asteroid : Entity() {
 
         val speedMultiplier = typeKnobs.speedMultiplier.value
         val speed = KnobsField.baseSpeed.value * speedMultiplier * sizeKnobs.speedFactor.value
+
+        cryoBaseSpeed = 0f
 
         // Set velocity
         if (direction != null) {
@@ -227,6 +231,7 @@ class Asteroid : Entity() {
         trailPoints.clear()
         lastTrailTime = 0f
         fragmentImmunityTimer = 0f
+        cryoBaseSpeed = 0f
         damage = KnobsField.contactDamage.value
         damageBonus = 0f
     }

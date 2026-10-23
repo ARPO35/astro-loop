@@ -25,7 +25,7 @@ class ScatterShot : Weapon(
          * players: the weapon's damage stat is mid-table, but a 60-degree throw put most of the
          * pellets nowhere near the target, so the shortfall was accuracy rather than damage.
          * Narrowing the cone raises effective damage without touching the damage number, which is
-         * also why the level bonus ("+2 pellets") starts being felt.
+         * also why the per-level pellet bonus starts being felt.
          *
          * Still deliberately wide enough to read as a shotgun — the identity is the spread, and a
          * cone this weapon could not miss with would just be a machine gun.

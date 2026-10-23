@@ -14,6 +14,7 @@ class KnobDefaultsTest {
             assertEquals(0.08f, needleSpread.value)
             assertEquals(0.08f, siphonSpread.value)
             assertEquals(0.1f, siphonHealPerHit.value)
+            assertEquals(0.1f, leechHealPerHit.value)
             assertEquals(PI.toFloat() / 6f, scatterCone.value)
             assertEquals(3.5f, homingStrength.value)
             assertEquals(0.3f, homingFan.value)
@@ -32,7 +33,7 @@ class KnobDefaultsTest {
         with(KnobsWeapons) {
             assertEquals(1f, sawDamagePerLevel.value)
             assertEquals(600f, warpLeash.value)
-            assertEquals(450f, warpRoamSpeed.value)
+            assertEquals(750f, warpRoamSpeed.value)
             assertEquals(0.3f, warpDuration.value)
             assertEquals(1600f, beamLength.value)
             assertEquals(10f, beamHalfWidth.value)

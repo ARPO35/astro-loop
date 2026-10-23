@@ -18,7 +18,8 @@ class ProjectileEffectsSystem(
     private val applyDamageModifiers: (Float) -> Pair<Float, Boolean>,
     private val onAsteroidDestroyed: (Asteroid) -> Unit,
     private val onEnemyDestroyed: (EnemyShip) -> Unit,
-    private val onPlayerDeath: () -> Unit,
+    // An enemy blast is a normal hit: dodge, i-frames, sound, telemetry, radio (GameSurfaceView.hitPlayer).
+    private val onEnemyBlastHitsPlayer: (damage: Float) -> Unit,
     private val onVolatileDetonation: (x: Float, y: Float, radius: Float, damage: Float) -> Unit,
 ) {
 
@@ -272,16 +273,7 @@ class ProjectileEffectsSystem(
                 val distSq = dx * dx + dy * dy
                 val damageRadius = projectile.explosionRadius + ship.radius
                 if (distSq <= damageRadius * damageRadius && !ship.isInvulnerable) {
-                    ship.takeDamage(projectile.explosionDamage)
-                    visualEffects.addDamageNumber(
-                        ship.position.x,
-                        ship.position.y - ship.radius,
-                        projectile.explosionDamage.toInt(),
-                        0xFFFF4444.toInt()  // Red for player damage
-                    )
-                    if (ship.health <= 0) {
-                        onPlayerDeath()
-                    }
+                    onEnemyBlastHitsPlayer(projectile.explosionDamage)
                 }
             }
         }

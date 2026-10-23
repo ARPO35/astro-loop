@@ -143,7 +143,7 @@ class GameState {
 
     // New passive effect fields
     var momentumDamageBonus: Float = 0f      // Momentum Drive: +8% per stack while moving
-    var cryoSlowPercent: Float = 0f          // Cryo Field: flat 50% slow
+    var cryoCentreSlow: Float = 0f           // Cryo Field: slow at the ship's centre (see CryoSlow); 0 = no field
     var cryoRadiusMultiplier: Float = 1f     // Cryo Field: +25% radius per stack
 
     /**
@@ -490,7 +490,7 @@ class GameState {
 
         // Reset new passive effect fields
         momentumDamageBonus = 0f
-        cryoSlowPercent = 0f
+        cryoCentreSlow = 0f
         cryoRadiusMultiplier = 1f
         effectRingFadeAlpha = 1f
         maxShieldCap = Float.MAX_VALUE
@@ -691,7 +691,7 @@ class GameState {
         droneCount = 0
         hasExtraWeaponSlot = false
         momentumDamageBonus = 0f
-        cryoSlowPercent = 0f
+        cryoCentreSlow = 0f
         cryoRadiusMultiplier = 1f
         maxShieldCap = Float.MAX_VALUE
         shieldRegenDisabled = false
@@ -728,7 +728,7 @@ class GameState {
                     momentumDamageBonus = KnobsPassives.momentumDamagePerStack.value * stacks
                 }
                 "cryo_field" -> {
-                    cryoSlowPercent = KnobsPassives.cryoSlow.value  // flat, not per stack
+                    cryoCentreSlow = KnobsPassives.cryoCentreSlow.value  // not per stack; stacks grow the radius
                     cryoRadiusMultiplier = 1f + KnobsPassives.cryoRadiusPerStack.value * stacks
                 }
                 "lucky_star" -> {

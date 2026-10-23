@@ -47,15 +47,15 @@ class SplitAsteroidHealthRampTest {
 
     @Test
     fun `fragments double when the ramp has doubled`() {
-        // 12.5 minutes is one doubling past the 8-minute start.
-        val fragments = system().spawnSplitAsteroids(largeRock(), endlessAt(12.5f))
+        // 12 minutes is one doubling past the 8-minute start.
+        val fragments = system().spawnSplitAsteroids(largeRock(), endlessAt(12f))
 
         for (f in fragments) assertEquals(50f, f.maxHealth, 0.5f)
     }
 
     @Test
     fun `fragments take the same factor a fresh spawn would`() {
-        val minutes = 21.5f   // three doublings: x8
+        val minutes = 20f     // three doublings: x8
         val fragments = system().spawnSplitAsteroids(largeRock(), endlessAt(minutes))
         val factor = SpawnSystem.asteroidHealthFactor(minutes * 60f, astroLoopMode = true)
 
@@ -87,7 +87,7 @@ class SplitAsteroidHealthRampTest {
             initialize(0f, 0f, AsteroidSize.LARGE, AsteroidType.METAL, Vector2(1f, 0f))
         }
 
-        val fragments = system().spawnSplitAsteroids(metal, endlessAt(12.5f))
+        val fragments = system().spawnSplitAsteroids(metal, endlessAt(12f))
 
         // MEDIUM base 25, metal x2, ramp x2.
         for (f in fragments) assertEquals(100f, f.maxHealth, 1f)

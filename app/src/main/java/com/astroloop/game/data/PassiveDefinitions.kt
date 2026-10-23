@@ -14,7 +14,7 @@ object PassiveDefinitions {
             id = "nano_repair",
             name = "Nano Repair",
             description = "Regenerates health over time",
-            effectPerStack = "+0.4 HP/sec"
+            effectPerStack = "+0.3 HP/sec"
         ),
         PassiveDef(
             id = "duplicator_core",
@@ -56,7 +56,7 @@ object PassiveDefinitions {
             id = "momentum_drive",
             name = "Momentum Drive",
             description = "Damage increases while moving",
-            effectPerStack = "+8% damage\nwhile moving"
+            effectPerStack = "+15% damage\nwhile moving"
         ),
         PassiveDef(
             id = "cryo_field",
@@ -80,7 +80,7 @@ object PassiveDefinitions {
             id = "vampiric_core",
             name = "Vampiric Core",
             description = "Drain life from nearby asteroids",
-            effectPerStack = "+0.1 HP/tick\nper asteroid"
+            effectPerStack = "+20 drain range"
         ),
         PassiveDef(
             id = "glass_cannon",

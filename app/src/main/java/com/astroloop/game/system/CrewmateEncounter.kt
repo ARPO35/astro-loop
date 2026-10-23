@@ -125,6 +125,10 @@ class CrewmateEncounter(
         WeaponFactory.createWeapon(shipDef.startingWeaponId)?.also { weapon ->
             weapon.cooldownTimer = 0.8f + Random.nextFloat() * 0.5f
             crewmateWeaponInstances.add(weapon)
+            // The ship carries it, so GameSurfaceView's enemy saw loops see a crewmate's Energy
+            // Saw (UNIT-7 flies the Ripper; EnergySaw.fire() is a no-op).
+            enemy.weaponId = shipDef.startingWeaponId
+            enemy.weapon = weapon
         }
 
         if (extraWeaponCount > 0) {

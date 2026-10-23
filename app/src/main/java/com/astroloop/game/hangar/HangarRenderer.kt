@@ -39,6 +39,9 @@ class HangarRenderer(private val persistence: PersistenceManager) {
     private val shapeRenderer = ShapeRenderer()
     private var screenWidth = 0f
     private var screenHeight = 0f
+
+    /** The TV overscan margin as a fraction of the screen height; 0 off a TV. */
+    var overscanFraction = 0f
     private var roomWidth = 0f
 
     // --- Paints ---
@@ -157,6 +160,7 @@ class HangarRenderer(private val persistence: PersistenceManager) {
         barPageRenderer.roomWidth = roomWidth
         barPageRenderer.landscape = landscape
         barPageRenderer.screenHeight = height
+        barPageRenderer.overscanFraction = overscanFraction
         barPageRenderer.walkwayY = walkwayY
         barPageRenderer.ceilingY = ceilingY
         barPageRenderer.content = layout.content
@@ -246,6 +250,7 @@ class HangarRenderer(private val persistence: PersistenceManager) {
         lastPanelScrimAlpha = 0
         lastPanelLayerAlpha = 0
         drawnSelectedShipX = Float.NaN // seam — see this field's own doc
+        drawnShipPriceColor = 0 // seam — see this field's own doc
         drawnRevealSrcX = Float.NaN    // seam — see drawCrystalReveal's own doc
         drawnRevealSrcY = Float.NaN
         drawnRevealDstX = Float.NaN
@@ -573,6 +578,15 @@ class HangarRenderer(private val persistence: PersistenceManager) {
         private set
 
     /**
+     * The colour the shipyard drew a ship's price in this frame, 0 on a frame that drew no price.
+     * Only the next ship in line shows a price, so one frame draws at most one. A seam, like
+     * [drawnYenRight], and test-only: a Robolectric canvas cannot be asked what colour it drew.
+     */
+    @Volatile
+    internal var drawnShipPriceColor: Int = 0
+        private set
+
+    /**
      * The scrim/box-layer alpha [drawPanelLayer] actually computed and used THIS frame, 0 when
      * nothing was drawn. Nothing reads these back — they exist purely as a seam, because
      * every test in the suite drives [HangarState.
@@ -625,7 +639,7 @@ class HangarRenderer(private val persistence: PersistenceManager) {
      * the band only decided tap ownership and stopped being so once a PANEL'S ARRANGEMENT started
      * depending on it — see [HangarMetrics.navBandTop]'s own doc.
      */
-    private val navBandTop: Float get() = HangarMetrics.navBandTop(screenHeight)
+    private val navBandTop: Float get() = HangarMetrics.navBandTop(screenHeight, overscanFraction)
 
     /**
      * The vertical space a panel's CONTENT may use, before padding.
@@ -1567,7 +1581,9 @@ class HangarRenderer(private val persistence: PersistenceManager) {
             // Cost or "LOCKED" — also fades with drag
             if (!isUnlocked && dragFade > 0f) {
                 if (state.canUnlockShip(i)) {
-                    costPaint.color = 0xFFFFD700.toInt()
+                    // Gold when you can pay it, grey when you cannot yet: the shop's rule.
+                    costPaint.color = StorePriceColor.of(ship.cost, state.actualYen)
+                    drawnShipPriceColor = costPaint.color // seam — see this field's own doc
                     costPaint.alpha = (peekAlpha * 255).toInt()
                     canvas.drawText(GameConfig.formatYen(ship.cost), shipX, shipY - 50f, costPaint)
                 } else {
@@ -1899,7 +1915,7 @@ class HangarRenderer(private val persistence: PersistenceManager) {
         val centerX = screenWidth / 2
         // The row the tap band in [HangarMetrics.navBandTop] is measured from — one definition,
         // so the labels and the band that catches them cannot drift apart.
-        val labelY = HangarMetrics.navLabelY(screenHeight)
+        val labelY = HangarMetrics.navLabelY(screenHeight, overscanFraction)
         val spacing = layout.content.width * 0.25f
 
         for (i in labels.indices) {
@@ -2484,10 +2500,11 @@ class HangarRenderer(private val persistence: PersistenceManager) {
             screenHeight: Float,
             contentWidth: Float,
             introCinematic: Boolean,
+            overscanFraction: Float = 0f,
             onNavigate: (Int) -> Unit
         ) {
-            val labelY = HangarMetrics.navLabelY(screenHeight)
-            val bandTop = HangarMetrics.navBandTop(screenHeight)
+            val labelY = HangarMetrics.navLabelY(screenHeight, overscanFraction)
+            val bandTop = HangarMetrics.navBandTop(screenHeight, overscanFraction)
             val centerX = screenWidth / 2f
             val spacing = contentWidth * 0.25f
             for (i in 0..2) {

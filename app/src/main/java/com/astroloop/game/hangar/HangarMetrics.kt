@@ -67,8 +67,24 @@ object HangarMetrics {
      *
      * Shared with [navBandTop] rather than written out at each draw site, so the row's position
      * and the band that catches taps for it can never drift apart.
+     *
+     * On a TV the row sits just high enough that its bottom stays inside the margin the picture may
+     * be cropped by ([overscanFraction] of the height); elsewhere the fraction is 0.
+     * The row is placed against that margin rather than `layout.safe.bottom`, matching phones,
+     * where the nav row also ignores the safe bottom.
      */
-    fun navLabelY(screenHeight: Float): Float = screenHeight * 0.95f
+    fun navLabelY(screenHeight: Float, overscanFraction: Float = 0f): Float =
+        if (overscanFraction == 0f) screenHeight * 0.95f
+        else minOf(
+            screenHeight * 0.95f,
+            screenHeight * (1f - overscanFraction) - NAV_BOTTOM_CLEARANCE
+        )
+
+    /**
+     * The deepest the nav row reaches below its baseline (its focus box) plus a little, so on a TV
+     * the whole row ends inside the overscan margin while staying as low as it can.
+     */
+    internal const val NAV_BOTTOM_CLEARANCE = 28f
 
     /** How far above [navLabelY] the nav row's tap band starts. */
     private const val NAV_BAND_ABOVE_LABEL = 30f
@@ -85,7 +101,8 @@ object HangarMetrics {
      * (found in review). Four literals agreeing by convention is not a defence against
      * that recurring; one function is.
      */
-    fun navBandTop(screenHeight: Float): Float = navLabelY(screenHeight) - NAV_BAND_ABOVE_LABEL
+    fun navBandTop(screenHeight: Float, overscanFraction: Float = 0f): Float =
+        navLabelY(screenHeight, overscanFraction) - NAV_BAND_ABOVE_LABEL
 
     /** Number of stools drawn along the counter. */
     const val STOOL_COUNT = 8

@@ -28,6 +28,12 @@ class LeechBurst : Weapon(
 
     override val knobs = KnobsWeapons.leechBurst
 
+    /**
+     * The count knob is what fires, plus Duplicator: 20, Scatter Shot's L5 volley (owner,
+     * 2026-10-22). The inherited level bonus added 3 on top, since an evolution is always level 5.
+     */
+    override fun getProjectileCount(state: GameState): Int = baseProjectileCount + state.extraProjectiles
+
     override fun fire(
         firer: Firer,
         state: GameState,

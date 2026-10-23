@@ -13,24 +13,24 @@ object KnobsWeapons {
     // ── Base weapons ────────────────────────────────────────────────────────────────────────────
     val pulseCannon = WeaponKnobs.base("pulse_cannon", "Pulse Cannon", damage = 15f, sixteenths = 4, count = 1, speed = 600f)
     val energySaw = WeaponKnobs.ticking("energy_saw", "Energy Saw", damage = 8f, tickMs = 100)
-    val scatterShot = WeaponKnobs.base("scatter_shot", "Scatter Shot", damage = 10f, sixteenths = 8, count = 5, speed = 500f, hasArea = true)
+    val scatterShot = WeaponKnobs.base("scatter_shot", "Scatter Shot", damage = 14f, sixteenths = 8, count = 8, speed = 500f, hasArea = true)
     val homingMissiles = WeaponKnobs.base("homing_missiles", "Homing Missiles", damage = 35f, sixteenths = 8, count = 1, speed = 350f)
     val ionOrbiters = WeaponKnobs.base(
-        "ion_orbiters", "Ion Orbiters", damage = 19f, sixteenths = 32, count = 2, hasArea = true,
+        "ion_orbiters", "Ion Orbiters", damage = 20f, sixteenths = 32, count = 2, hasArea = true,
         countApplies = Applies.ON_EDITOR_CLOSE,
     )
-    val railgun = WeaponKnobs.base("railgun", "Railgun", damage = 80f, sixteenths = 12, count = 1, speed = 2000f)
+    val railgun = WeaponKnobs.base("railgun", "Railgun", damage = 100f, sixteenths = 8, count = 1, speed = 2000f)
     val spaceMines = WeaponKnobs.base("space_mines", "Space Mines", damage = 60f, sixteenths = 16, count = 1, hasArea = true)
-    val solarStorm = WeaponKnobs.base("solar_storm", "Solar Storm", damage = 29f, sixteenths = 16, count = 1, countLabel = "Targets at L1")
+    val solarStorm = WeaponKnobs.base("solar_storm", "Solar Storm", damage = 40f, sixteenths = 16, count = 1, countLabel = "Targets at L1")
     val novaBlast = WeaponKnobs.base("nova_blast", "Nova Blast", damage = 40f, sixteenths = 32, count = null, hasArea = true)
-    val needleGun = WeaponKnobs.base("needle_gun", "Needle Gun", damage = 5f, sixteenths = 2, count = 3, speed = 800f)
-    val clusterBomb = WeaponKnobs.base("cluster_bomb", "Cluster Bomb", damage = 60f, sixteenths = 16, count = 1, speed = 200f, hasArea = true)
+    val needleGun = WeaponKnobs.base("needle_gun", "Needle Gun", damage = 5f, sixteenths = 2, count = 1, speed = 800f)
+    val clusterBomb = WeaponKnobs.base("cluster_bomb", "Cluster Bomb", damage = 60f, sixteenths = 16, count = 1, speed = 350f, hasArea = true)
     val flakCannon = WeaponKnobs.base("flak_cannon", "Flak Cannon", damage = 44f, sixteenths = 8, count = 1, speed = 400f, hasArea = true)
 
     // ── Evolutions ──────────────────────────────────────────────────────────────────────────────
     val stormCannon = WeaponKnobs.evolution("storm_cannon", "Storm Cannon", from = pulseCannon, rate = 0.5f, damage = 18f, count = 3, speed = 700f)
     val warpSaw = WeaponKnobs.ticking("warp_saw", "Warp Saw", damage = 15f, tickMs = 100)
-    val leechBurst = WeaponKnobs.evolution("leech_burst", "Leech Burst", from = scatterShot, rate = 0.5f, damage = 12f, count = 13, speed = 550f, hasArea = true)
+    val leechBurst = WeaponKnobs.evolution("leech_burst", "Leech Burst", from = scatterShot, rate = 0.5f, damage = 12f, count = 20, speed = 550f, hasArea = true)
     val autonomousAce = WeaponKnobs.evolution("autonomous_ace", "Autonomous Ace", from = homingMissiles, rate = 1f, damage = 45f, count = 5, speed = 500f)
     // No count knob: the rings use frost_ring.inner_count and frost_ring.outer_count.
     val frostRing = WeaponKnobs.evolution("frost_ring", "Frost Ring", from = ionOrbiters, rate = 0.5f, damage = 20f, count = null, fixedCount = 18, hasArea = true)
@@ -62,18 +62,19 @@ object KnobsWeapons {
     val siphonHealPerHit = siphonNeedles.g.float("heal_per_hit", "Heal per hit (HP)", 0.1f, min = 0f, max = 5f)
 
     val railgunPierce = railgun.g.int("pierce", "Pierces", 10, max = 100)
-    val railgunShotRadius = railgun.g.floatsPerLevel("shot_radius", "Shot radius", floatArrayOf(4f, 5.5f, 7f, 8.5f, 10f))
-    val railgunShotWidth = railgun.g.floatsPerLevel("shot_width", "Shot width", floatArrayOf(3f, 5f, 7f, 9f, 11f))
+    val railgunShotRadius = railgun.g.floatsPerLevel("shot_radius", "Shot radius", floatArrayOf(4f, 7f, 10f, 13f, 16f))
+    val railgunShotWidth = railgun.g.floatsPerLevel("shot_width", "Shot width", floatArrayOf(3f, 6f, 10f, 14f, 18f))
     val railgunLifetime = railgun.g.float("lifetime", "Slug lifetime (s)", 3f)
 
     /** Leech Burst throws this same cone: an evolution must never scatter wider than its base. */
     val scatterCone = scatterShot.g.float("cone", "Cone (rad)", PI.toFloat() / 6f)
-    val scatterCountGrowth = scatterShot.g.int("count_growth", "Pellets per level", 2, min = 0, max = 10)
+    val scatterCountGrowth = scatterShot.g.int("count_growth", "Pellets per level", 3, min = 0, max = 10)
     val scatterLifetime = scatterShot.g.float("lifetime", "Pellet lifetime (s)", 1.5f)
-    val scatterPelletRadius = scatterShot.g.float("pellet_radius", "Pellet radius", 3f)
+    val scatterPelletRadius = scatterShot.g.float("pellet_radius", "Pellet radius", 5f)
 
     val leechLifetime = leechBurst.g.float("lifetime", "Pellet lifetime (s)", 1.5f)
     val leechPelletRadius = leechBurst.g.float("pellet_radius", "Pellet radius", 3f)
+    val leechHealPerHit = leechBurst.g.float("heal_per_hit", "Heal per hit (HP)", 0.1f, min = 0f, max = 5f)
 
     val homingStrength = homingMissiles.g.float("homing", "Homing strength", 3.5f)
     val homingLifetime = homingMissiles.g.float("lifetime", "Missile lifetime (s)", 4f)
@@ -83,8 +84,8 @@ object KnobsWeapons {
     val aceLifetime = autonomousAce.g.float("lifetime", "Missile lifetime (s)", 4f)
 
     val clusterExplosionRadius = clusterBomb.g.float("explosion_radius", "Explosion radius", 80f)
-    val clusterBomblets = clusterBomb.g.int("bomblets", "Bomblets at L1 (+1 per level)", 2, min = 0, max = 20)
-    val clusterExplosionFraction = clusterBomb.g.float("explosion_frac", "Explosion damage ×", 0.3f)
+    val clusterBomblets = clusterBomb.g.int("bomblets", "Bomblets at L1 (+1 per level)", 3, min = 0, max = 20)
+    val clusterExplosionFraction = clusterBomb.g.float("explosion_frac", "Explosion damage ×", 0.5f)
     val clusterBombletFraction = clusterBomb.g.float("bomblet_frac", "Bomblet damage ×", 0.3f)
     val clusterFragmentFraction = clusterBomb.g.float("fragment_frac", "Fragment damage ×", 0.15f)
     val clusterBombletRadiusFraction = clusterBomb.g.float("bomblet_radius_frac", "Bomblet radius ×", 0.6f)
@@ -100,14 +101,15 @@ object KnobsWeapons {
     val hunterBombletRadiusFraction = hunterKiller.g.float("bomblet_radius_frac", "Bomblet radius ×", 0.6f)
     val hunterLifetime = hunterKiller.g.float("lifetime", "Fuse (s)", 6f)
 
-    val flakExplosionRadius = flakCannon.g.float("explosion_radius", "Explosion radius", 60f)
+    val flakExplosionRadius = flakCannon.g.float("explosion_radius", "Explosion radius", 85f)
     val flakExplosionFraction = flakCannon.g.float("explosion_frac", "Explosion damage ×", 0.7f)
     val flakSpread = flakCannon.g.float("spread", "Spread (rad)", 0.15f)
     val flakJitter = flakCannon.g.float("jitter", "Jitter (rad)", 0.1f, min = 0f, max = 1f)
     val flakFuse = flakCannon.g.float("fuse", "Fuse (s)", 1.5f)
     val flakShellRadius = flakCannon.g.float("shell_radius", "Shell radius", 6f)
 
-    val barrageExplosionRadius = flakBarrage.g.float("explosion_radius", "Explosion radius", 60f)
+    // Flak Cannon's blast (owner, 2026-10-22).
+    val barrageExplosionRadius = flakBarrage.g.float("explosion_radius", "Explosion radius", 85f)
     val barrageExplosionFraction = flakBarrage.g.float("explosion_frac", "Explosion damage ×", 0.7f)
     val barrageSpread = flakBarrage.g.float("spread", "Spread (rad)", 0.15f)
     val barrageJitter = flakBarrage.g.float("jitter", "Jitter (rad)", 0.1f, min = 0f, max = 1f)
@@ -116,13 +118,13 @@ object KnobsWeapons {
 
     // ── Specials: saws, beam, orbiters, mines, flare, novas ─────────────────────────────────────
     val sawDamagePerLevel = energySaw.g.float("damage_per_level", "Damage per level", 1f, min = 0f, max = 20f)
-    val sawDiscRadius = energySaw.g.floatsPerLevel("disc_radius", "Blade radius", floatArrayOf(20f, 28f, 36f, 45f, 55f))
+    val sawDiscRadius = energySaw.g.floatsPerLevel("disc_radius", "Blade radius", floatArrayOf(28f, 36f, 44f, 53f, 75f))
     val sawReach = energySaw.g.floatsPerLevel("reach", "Reach", floatArrayOf(80f, 90f, 100f, 112f, 125f))
 
-    val warpDiscRadius = warpSaw.g.float("disc_radius", "Blade radius", 55f)
+    val warpDiscRadius = warpSaw.g.float("disc_radius", "Blade radius", 75f)
     val warpReach = warpSaw.g.float("reach", "Reach", 125f)
     val warpLeash = warpSaw.g.float("leash", "Leash range", 600f)
-    val warpRoamSpeed = warpSaw.g.float("roam_speed", "Roam speed", 450f)
+    val warpRoamSpeed = warpSaw.g.float("roam_speed", "Roam speed", 750f)
     val warpDuration = warpSaw.g.float("warp_duration", "Warp home (s)", 0.3f)
 
     val beamLength = oblivionBeam.g.float("length", "Beam length", 1600f)
@@ -135,20 +137,20 @@ object KnobsWeapons {
     val ionCountGrowth = ionOrbiters.g.int("count_growth", "Orbiters per level", 1, min = 0, max = 10, applies = Applies.ON_EDITOR_CLOSE)
 
     val frostInnerCount = frostRing.g.int("inner_count", "Inner orbs", 6, applies = Applies.ON_EDITOR_CLOSE)
-    val frostOuterCount = frostRing.g.int("outer_count", "Outer orbs", 12, applies = Applies.ON_EDITOR_CLOSE)
+    val frostOuterCount = frostRing.g.int("outer_count", "Outer orbs", 8, applies = Applies.ON_EDITOR_CLOSE)
     val frostInnerRadius = frostRing.g.float("inner_radius", "Inner radius", 110f)
     val frostOuterRadius = frostRing.g.float("outer_radius", "Outer radius", 225f)
     val frostInnerSpeed = frostRing.g.float("inner_speed", "Inner speed (rad/s)", 3.5f)
     val frostOuterSpeed = frostRing.g.float("outer_speed", "Outer speed (rad/s)", 2.5f)
     val frostOrbRadius = frostRing.g.float("orb_radius", "Orb radius", 10f, applies = Applies.ON_EDITOR_CLOSE)
 
-    val minesExplosionRadius = spaceMines.g.floatsPerLevel("explosion_radius", "Explosion radius", floatArrayOf(40f, 80f, 80f, 110f, 110f))
+    val minesExplosionRadius = spaceMines.g.floatsPerLevel("explosion_radius", "Explosion radius", floatArrayOf(70f, 160f, 160f, 280f, 280f))
     val minesLifetime = spaceMines.g.float("lifetime", "Mine lifetime (s)", 30f, applies = Applies.NEW_SPAWNS)
     val minesSpawnDelay = spaceMines.g.float("spawn_delay", "Delay between mines (s)", 0.2f)
     val minesRadius = spaceMines.g.float("mine_radius", "Mine radius", 12f, applies = Applies.NEW_SPAWNS)
     val minesCountGrowth = spaceMines.g.float("count_growth", "Mines per level (rounded down)", 0.5f, min = 0f, max = 5f)
 
-    val jackpotExplosionRadius = jackpotMines.g.float("explosion_radius", "Explosion radius", 80f)
+    val jackpotExplosionRadius = jackpotMines.g.float("explosion_radius", "Explosion radius", 280f)
     val jackpotLifetime = jackpotMines.g.float("lifetime", "Mine lifetime (s)", 30f, applies = Applies.NEW_SPAWNS)
     val jackpotRadius = jackpotMines.g.float("mine_radius", "Mine radius", 12f, applies = Applies.NEW_SPAWNS)
 

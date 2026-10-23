@@ -6,7 +6,7 @@ package com.astroloop.game.tuning
  * through [load] first. Add each new declaration object to the list.
  */
 internal object KnobCatalog {
-    private val declarations: List<Any> by lazy { listOf<Any>(KnobsWeapons, KnobsPassives, KnobsAsteroids, KnobsField, KnobsDrops) }
+    private val declarations: List<Any> by lazy { listOf<Any>(KnobsWeapons, KnobsPassives, KnobsAsteroids, KnobsField, KnobsDrops, KnobsEnemies) }
 
     fun load() {
         declarations.size

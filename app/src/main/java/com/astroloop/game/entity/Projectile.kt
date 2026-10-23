@@ -78,9 +78,6 @@ class Projectile : Entity() {
     var gravitySink: Boolean = false
     var gravitySinkTimer: Float = 0f
 
-    // Chain arc (Pulse Cannon L5)
-    var hasChained: Boolean = false
-
     // Recall shot data
     var isRecalling: Boolean = false
     var recallPauseTimer: Float = 0f
@@ -199,11 +196,24 @@ class Projectile : Entity() {
             position.x = center.x + cos(orbitAngle) * orbitRadius
             position.y = center.y + sin(orbitAngle) * orbitRadius
         }
-        // Reset hit tracking each frame so orbiters can hit the same target again
-        // on subsequent passes. The collision system won't double-hit within a single
-        // frame because hitEntities is checked before each onHit call.
-        hitEntities.clear()
+        // One hit per pass: forget a target once this orb has left it (or it is gone), so the
+        // orb hits it again on its next time round. Forgetting every target on every frame made
+        // the orb hit on each frame it overlapped something, so its damage followed the frame rate.
+        val iterator = hitEntities.iterator()
+        while (iterator.hasNext()) {
+            val entity = iterator.next()
+            if (!entity.isActive || !collidesWith(entity)) iterator.remove()
+        }
     }
+
+    /**
+     * True when this piercing shot has already hit [entity] and may not hit it again (owner,
+     * 2026-10-22). A piercing shot hits each rock or ship once; the asteroid path has always
+     * enforced that through [onHit], and the enemy and boss paths check this before dealing damage.
+     * An orb forgets a target once it has left it, so it hits once per pass. A beam clears its list
+     * every frame, so it keeps hitting.
+     */
+    fun alreadyHit(entity: Entity): Boolean = piercing && hitEntities.contains(entity)
 
     fun initialize(
         x: Float,
@@ -370,7 +380,6 @@ class Projectile : Entity() {
         trailDuration = 1.5f
         gravitySink = false
         gravitySinkTimer = 0f
-        hasChained = false
         decelerationRate = 0f
         isRecalling = false
         recallPauseTimer = 0f
@@ -387,6 +396,8 @@ class Projectile : Entity() {
     }
 
     companion object {
+        /** A proximity-fused shell bursts this far from a target's edge (flak, the player's and enemies'). */
+        const val PROXIMITY_FUSE_RANGE = 40f
         const val GRAVITY_SINK_DURATION = 0.3f
         const val GRAVITY_SINK_RADIUS = 150f
         const val GRAVITY_SINK_FORCE = 180f

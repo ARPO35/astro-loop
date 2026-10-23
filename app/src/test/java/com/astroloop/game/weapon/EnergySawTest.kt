@@ -16,11 +16,11 @@ class EnergySawTest {
 
     @Test
     fun `disc radius grows per level`() {
-        assertEquals(20f, sawAt(1).discRadius, 0.001f)
-        assertEquals(28f, sawAt(2).discRadius, 0.001f)
-        assertEquals(36f, sawAt(3).discRadius, 0.001f)
-        assertEquals(45f, sawAt(4).discRadius, 0.001f)
-        assertEquals(55f, sawAt(5).discRadius, 0.001f)
+        assertEquals(28f, sawAt(1).discRadius, 0.001f)
+        assertEquals(36f, sawAt(2).discRadius, 0.001f)
+        assertEquals(44f, sawAt(3).discRadius, 0.001f)
+        assertEquals(53f, sawAt(4).discRadius, 0.001f)
+        assertEquals(75f, sawAt(5).discRadius, 0.001f)
     }
 
     @Test

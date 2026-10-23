@@ -4,6 +4,7 @@ import com.astroloop.game.core.GameState
 import com.astroloop.game.data.PilotDefinitions
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.entity.Boss
+import com.astroloop.game.system.VampiricLeecherSystem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,14 +68,15 @@ class EffectRingsTest {
     }
 
     @Test
-    fun `vampiric ring does not grow with stacks`() {
+    fun `vampiric ring grows with stacks, as its range does`() {
         val state = GameState()
-        state.addPassive("vampiric_core")
-        state.recalculateStats()
-        val one = EffectRings.ringsFor(state).single().radius
-        repeat(4) { state.addPassive("vampiric_core") }
-        state.recalculateStats()
-        assertEquals(one, EffectRings.ringsFor(state).single().radius, 0.001f)
+        for (stacks in 1..5) {
+            state.addPassive("vampiric_core")
+            state.recalculateStats()
+            val radius = EffectRings.ringsFor(state).single().radius
+            assertEquals(VampiricLeecherSystem.rangeFor(stacks), radius, 0.001f)
+            assertEquals(60f + 20f * (stacks - 1), radius, 0.001f)
+        }
     }
 
     private fun ring(id: String, radius: Float) = EffectRings.Ring(id, radius, 0xFF000000.toInt())
@@ -222,12 +224,10 @@ class EffectRingsTest {
     }
 
     @Test
-    fun `alpha pulses within the faint band and scales with the fade`() {
-        for (t in 0..40) {
-            val a = EffectRings.alpha(t / 4f, 1f)
-            assertTrue("alpha $a out of band", a >= 0.09f && a <= 0.21f)
-        }
-        assertEquals(0f, EffectRings.alpha(0f, 0f), 0.001f)
-        assertTrue(EffectRings.alpha(0f, 0.5f) < EffectRings.alpha(0f, 1f))
+    fun `alpha is steady at the old pulse's brightest and scales with the fade`() {
+        // Owner, 2026-10-22: no pulse; hold the 0.10-0.20 pulse's top.
+        assertEquals(0.20f, EffectRings.alpha(1f), 1e-6f)
+        assertEquals(0f, EffectRings.alpha(0f), 1e-6f)
+        assertEquals(0.10f, EffectRings.alpha(0.5f), 1e-6f)
     }
 }

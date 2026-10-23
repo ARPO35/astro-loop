@@ -19,11 +19,7 @@ class SawDamageSystem(
     private val visualEffects: VisualEffectManager,
     private val applyDamageModifiers: (Float) -> Pair<Float, Boolean>,
     private val onAsteroidDestroyed: (Asteroid) -> Unit,
-    private val onEnemyDestroyed: (EnemyShip) -> Unit,
-    // C1: callback to register spawned projectiles with the game's active list.
-    // Projectiles live in EntityPools.projectiles (obtain() adds to inUse), so this
-    // is a no-op in the current architecture — wired as {} in GameSurfaceView.
-    private val spawnProjectile: (Projectile) -> Unit
+    private val onEnemyDestroyed: (EnemyShip) -> Unit
 ) {
     val sawSparks = mutableListOf<SawSpark>()
     private val sawDamageCooldowns = mutableMapOf<Entity, Float>()
@@ -31,10 +27,6 @@ class SawDamageSystem(
 
     private companion object {
         const val SAW_SOUND_COOLDOWN = 0.15f
-        const val SHARD_DAMAGE = 4f
-        const val SHARD_SPEED = 300f
-        const val SHARD_RADIUS = 4f
-        const val SHARD_LIFETIME = 0.3f
     }
 
     fun reset() {
@@ -139,9 +131,6 @@ class SawDamageSystem(
                             }
                             spawnSawSparks(discX, discY, enemy.position.x, enemy.position.y, weaponId, playSound = true)
 
-                            // Contact sparks — 3 shards fired outward on each damage tick
-                            spawnContactShards(discX, discY, weaponId, weaponColor)
-
                             if (destroyed) {
                                 onEnemyDestroyed(enemy)
                             }
@@ -172,7 +161,6 @@ class SawDamageSystem(
                                 isCrit
                             )
                             spawnSawSparks(discX, discY, asteroid.position.x, asteroid.position.y, weaponId, playSound = false)
-                            spawnContactShards(discX, discY, weaponId, weaponColor)
 
                             if (destroyed) {
                                 onAsteroidDestroyed(asteroid)
@@ -181,29 +169,6 @@ class SawDamageSystem(
                     }
                 }
             }
-        }
-    }
-
-    /** Spawn 3 shards flying outward in random directions from the disc-contact point. */
-    private fun spawnContactShards(discX: Float, discY: Float, weaponId: String, color: Int) {
-        for (i in 0 until 3) {
-            // M1: use kotlin.random instead of Math.random()
-            val angle = kotlin.random.Random.nextFloat() * 2f * PI.toFloat()
-            val shard = EntityPools.projectiles.obtain()
-            shard.initialize(
-                x = discX,
-                y = discY,
-                vx = cos(angle) * SHARD_SPEED,
-                vy = sin(angle) * SHARD_SPEED,
-                projectileType = ProjectileType.BULLET,
-                projectileDamage = SHARD_DAMAGE,
-                projectileLifetime = SHARD_LIFETIME
-            )
-            shard.radius = SHARD_RADIUS
-            shard.weaponId = weaponId
-            shard.color = color
-            shard.piercing = false
-            spawnProjectile(shard)  // C1: register with game's active projectile list
         }
     }
 

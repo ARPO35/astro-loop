@@ -51,58 +51,58 @@ field m=7.5 astro=true difficulty=3.9882812 count=3 speed=7.0 hp=1.0 dmg=0.0
 field m=8.0 astro=false difficulty=3.9919999 count=3 speed=7.0 hp=1.0 dmg=0.0
 field m=8.0 astro=true difficulty=4.0 count=3 speed=7.0 hp=1.0 dmg=0.0
 field m=8.5 astro=false difficulty=4.0 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=8.5 astro=true difficulty=4.2 count=3 speed=7.0 hp=1.0800598 dmg=3.0
+field m=8.5 astro=true difficulty=4.2 count=3 speed=7.0 hp=1.0905077 dmg=3.0
 field m=9.0 astro=false difficulty=3.9924998 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=9.0 astro=true difficulty=4.4 count=3 speed=7.0 hp=1.166529 dmg=6.0
+field m=9.0 astro=true difficulty=4.4 count=3 speed=7.0 hp=1.1892071 dmg=6.0
 field m=9.5 astro=false difficulty=3.961625 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=9.5 astro=true difficulty=4.6 count=3 speed=7.0 hp=1.2599211 dmg=9.0
+field m=9.5 astro=true difficulty=4.6 count=3 speed=7.0 hp=1.2968396 dmg=9.0
 field m=10.0 astro=false difficulty=3.9099994 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=10.0 astro=true difficulty=4.8 count=3 speed=7.0 hp=1.36079 dmg=12.0
+field m=10.0 astro=true difficulty=4.8 count=3 speed=7.0 hp=1.4142135 dmg=12.0
 field m=10.5 astro=false difficulty=3.8376255 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=10.5 astro=true difficulty=5.0 count=3 speed=7.0 hp=1.4697345 dmg=15.0
+field m=10.5 astro=true difficulty=5.0 count=3 speed=7.0 hp=1.5422108 dmg=15.0
 field m=11.0 astro=false difficulty=3.7444997 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=11.0 astro=true difficulty=5.2 count=3 speed=7.0 hp=1.587401 dmg=18.0
+field m=11.0 astro=true difficulty=5.2 count=3 speed=7.0 hp=1.6817929 dmg=18.0
 field m=11.5 astro=false difficulty=3.6306248 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=11.5 astro=true difficulty=5.4 count=3 speed=7.0 hp=1.714488 dmg=21.0
+field m=11.5 astro=true difficulty=5.4 count=3 speed=7.0 hp=1.8340081 dmg=21.0
 field m=12.0 astro=false difficulty=3.4960003 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=12.0 astro=true difficulty=5.6 count=3 speed=7.0 hp=1.8517494 dmg=24.0
+field m=12.0 astro=true difficulty=5.6 count=3 speed=7.0 hp=2.0 dmg=24.0
 field m=12.5 astro=false difficulty=3.3406253 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=12.5 astro=true difficulty=5.8 count=3 speed=7.0 hp=2.0 dmg=27.0
+field m=12.5 astro=true difficulty=5.8 count=3 speed=7.0 hp=2.1810155 dmg=27.0
 field m=13.0 astro=false difficulty=3.1644993 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=13.0 astro=true difficulty=6.0 count=3 speed=7.0 hp=2.1601195 dmg=30.0
+field m=13.0 astro=true difficulty=6.0 count=3 speed=7.0 hp=2.3784142 dmg=30.0
 field m=13.5 astro=false difficulty=2.9676242 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=13.5 astro=true difficulty=6.2 count=3 speed=7.0 hp=2.333058 dmg=33.0
+field m=13.5 astro=true difficulty=6.2 count=3 speed=7.0 hp=2.5936792 dmg=33.0
 field m=14.0 astro=false difficulty=2.75 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=14.0 astro=true difficulty=6.4 count=3 speed=7.0 hp=2.5198421 dmg=36.0
+field m=14.0 astro=true difficulty=6.4 count=3 speed=7.0 hp=2.828427 dmg=36.0
 field m=14.5 astro=false difficulty=2.5116253 count=3 speed=7.0 hp=1.0 dmg=0.0
-field m=14.5 astro=true difficulty=6.6000004 count=3 speed=7.0 hp=2.72158 dmg=39.0
+field m=14.5 astro=true difficulty=6.6000004 count=3 speed=7.0 hp=3.0844216 dmg=39.0
 field m=15.0 astro=false difficulty=2.2524996 count=2 speed=7.0 hp=1.0 dmg=0.0
-field m=15.0 astro=true difficulty=6.8 count=3 speed=7.0 hp=2.939469 dmg=42.0
+field m=15.0 astro=true difficulty=6.8 count=3 speed=7.0 hp=3.3635857 dmg=42.0
 field m=15.5 astro=false difficulty=1.9726248 count=2 speed=6.5589776 hp=1.0 dmg=0.0
-field m=15.5 astro=true difficulty=7.0 count=3 speed=7.0 hp=3.174802 dmg=45.0
+field m=15.5 astro=true difficulty=7.0 count=3 speed=7.0 hp=3.6680162 dmg=45.0
 field m=16.0 astro=false difficulty=1.6719999 count=2 speed=5.6848 hp=1.0 dmg=0.0
-field m=16.0 astro=true difficulty=7.2 count=3 speed=7.0 hp=3.428976 dmg=48.0
+field m=16.0 astro=true difficulty=7.2 count=3 speed=7.0 hp=4.0 dmg=48.0
 field m=16.5 astro=false difficulty=1.350625 count=1 speed=4.6934223 hp=1.0 dmg=0.0
-field m=16.5 astro=true difficulty=7.4 count=3 speed=7.0 hp=3.7034986 dmg=51.0
+field m=16.5 astro=true difficulty=7.4 count=3 speed=7.0 hp=4.362031 dmg=51.0
 field m=17.0 astro=false difficulty=1.008501 count=1 speed=3.580179 hp=1.0 dmg=0.0
-field m=17.0 astro=true difficulty=7.6000004 count=3 speed=7.0 hp=4.0 dmg=54.0
+field m=17.0 astro=true difficulty=7.6000004 count=3 speed=7.0 hp=4.7568283 dmg=54.0
 field m=17.5 astro=false difficulty=0.6456251 count=1 speed=2.3403912 hp=1.0 dmg=0.0
-field m=17.5 astro=true difficulty=7.8 count=3 speed=7.0 hp=4.320239 dmg=57.0
+field m=17.5 astro=true difficulty=7.8 count=3 speed=7.0 hp=5.1873584 dmg=57.0
 field m=18.0 astro=false difficulty=0.26200008 count=1 speed=0.96940035 hp=1.0 dmg=0.0
-field m=18.0 astro=true difficulty=8.0 count=3 speed=7.0 hp=4.6661167 dmg=60.0
+field m=18.0 astro=true difficulty=8.0 count=3 speed=7.0 hp=5.656854 dmg=60.0
 field m=18.5 astro=false difficulty=-0.14237404 count=1 speed=-0.537462 hp=1.0 dmg=0.0
-field m=18.5 astro=true difficulty=8.200001 count=3 speed=7.0 hp=5.039684 dmg=63.0
+field m=18.5 astro=true difficulty=8.200001 count=3 speed=7.0 hp=6.1688433 dmg=63.0
 field m=19.0 astro=false difficulty=-0.56749916 count=1 speed=-2.184872 hp=1.0 dmg=0.0
-field m=19.0 astro=true difficulty=8.4 count=3 speed=7.0 hp=5.44316 dmg=66.0
+field m=19.0 astro=true difficulty=8.4 count=3 speed=7.0 hp=6.7271714 dmg=66.0
 field m=19.5 astro=false difficulty=-1.0133753 count=1 speed=-3.9774983 hp=1.0 dmg=0.0
-field m=19.5 astro=true difficulty=8.6 count=3 speed=7.0 hp=5.878938 dmg=69.0
+field m=19.5 astro=true difficulty=8.6 count=3 speed=7.0 hp=7.3360324 dmg=69.0
 field m=20.0 astro=false difficulty=-1.4800014 count=1 speed=-5.920006 hp=1.0 dmg=0.0
-field m=20.0 astro=true difficulty=8.8 count=3 speed=7.0 hp=6.3496046 dmg=72.0
-passive nano_repair x1 dmg=1.0 regen=0.4 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x2 dmg=1.0 regen=0.8 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x3 dmg=1.0 regen=1.2 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x4 dmg=1.0 regen=1.6 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x5 dmg=1.0 regen=2.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+field m=20.0 astro=true difficulty=8.8 count=3 speed=7.0 hp=8.0 dmg=72.0
+passive nano_repair x1 dmg=1.0 regen=0.3 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x2 dmg=1.0 regen=0.6 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x3 dmg=1.0 regen=0.90000004 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x4 dmg=1.0 regen=1.2 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x5 dmg=1.0 regen=1.5 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
@@ -133,16 +133,16 @@ passive combat_drone x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=
 passive combat_drone x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=3 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive combat_drone x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=4 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive combat_drone x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=5 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive momentum_drive x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.08 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive momentum_drive x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.16 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive momentum_drive x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.24 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive momentum_drive x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.32 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive momentum_drive x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.39999998 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive cryo_field x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.5/1.25/125.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive cryo_field x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.5/1.5/150.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive cryo_field x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.5/1.75/175.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive cryo_field x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.5/2.0/200.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive cryo_field x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.5/2.25/225.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive momentum_drive x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.15 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive momentum_drive x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.3 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive momentum_drive x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.45000002 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive momentum_drive x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.6 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive momentum_drive x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.75 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive cryo_field x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.9/1.25/125.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive cryo_field x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.9/1.5/150.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive cryo_field x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.9/1.75/175.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive cryo_field x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.9/2.0/200.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive cryo_field x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.9/2.25/225.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive lucky_star x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.5 shieldCap=3.4028235E38 shieldRegenOff=false
 passive lucky_star x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.5 shieldCap=3.4028235E38 shieldRegenOff=false
 passive lucky_star x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.5 shieldCap=3.4028235E38 shieldRegenOff=false
@@ -190,4 +190,4 @@ drops astro=true collected=10 chance=0.025 early=false
 drops astro=true collected=11 chance=0.025 early=false
 drops astro=true collected=12 chance=0.025 early=false
 beam length=1600.0 halfWidth=10.0 tick=0.1
-vampiric tick=0.2 range=100.0 perStack=0.1 maxTargets=6
+vampiric tick=0.2 baseRange=60.0 rangePerStack=20.0 leech=0.2 maxTargets=6

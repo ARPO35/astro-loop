@@ -36,6 +36,9 @@ class BarPageRenderer(
     var landscape = false
 
     var screenHeight = 0f
+
+    /** The TV overscan margin as a fraction of the screen height; 0 off a TV. */
+    var overscanFraction = 0f
     var walkwayY = 0f
     var ceilingY = 0f
     var content: LayoutRect = LayoutRect(0f, 0f, 0f, 0f)
@@ -532,7 +535,7 @@ class BarPageRenderer(
     private fun drawChatMessages(canvas: Canvas, state: HangarState) {
         val lineHeight = 32f
         val chatFontSize = 24f
-        val indicatorY = screenHeight * 0.95f
+        val indicatorY = HangarMetrics.navLabelY(screenHeight, overscanFraction)
         val chatBottom = indicatorY - 30f
         val chatTop = walkwayY + 10f
         val maxVisible = ((chatBottom - chatTop) / lineHeight).toInt().coerceAtLeast(1)

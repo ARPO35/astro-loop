@@ -72,11 +72,11 @@ object WeaponDefinitions {
             evolutionPassive = "vampiric_core",
             evolutionWeaponId = "leech_burst",
             levelBonuses = listOf(
-                "5 pellets",
-                "+2 pellets",
-                "+2 pellets",
-                "+2 pellets",
-                "+2 pellets"
+                "8 pellets",
+                "+3 pellets",
+                "+3 pellets",
+                "+3 pellets",
+                "+3 pellets"
             )
         ),
         WeaponDef(
@@ -170,7 +170,7 @@ object WeaponDefinitions {
             evolutionPassive = "nano_repair",
             evolutionWeaponId = "siphon_needles",
             levelBonuses = listOf(
-                "3 needles",
+                "1 needle",
                 "+1 needle",
                 "+1 needle",
                 "+1 needle",
@@ -184,7 +184,7 @@ object WeaponDefinitions {
             evolutionPassive = "magnet_field",
             evolutionWeaponId = "hunter_killer",
             levelBonuses = listOf(
-                "2 bomblets",
+                "3 bomblets",
                 "+1 bomblet",
                 "+1 bomblet",
                 "+1 bomblet",
@@ -227,7 +227,7 @@ object WeaponDefinitions {
         WeaponDef(
             id = "autonomous_ace",
             name = "Autonomous Ace",
-            description = "Missiles split and chase new targets",
+            description = "A missile swarm, one target each",
         ),
         WeaponDef(
             id = "frost_ring",
@@ -267,7 +267,7 @@ object WeaponDefinitions {
         WeaponDef(
             id = "flak_barrage",
             name = "Flak Barrage",
-            description = "A burst of five exploding shells",
+            description = "A wide burst of exploding shells",
         )
     )
 
