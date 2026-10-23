@@ -86,7 +86,7 @@ object PassiveDefinitions {
             id = "glass_cannon",
             name = "Glass Cannon",
             description = "No shields, massive damage",
-            effectPerStack = "+100% damage, shields disabled"
+            effectPerStack = "+300% damage, shields disabled"
         )
     )
 

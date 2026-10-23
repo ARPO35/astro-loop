@@ -272,11 +272,11 @@ class GameStatePassiveTest {
     // ─── Glass Cannon ──────────────────────────────────────────
 
     @Test
-    fun `glass_cannon gives instant-max 100 percent damage`() {
+    fun `glass_cannon gives instant-max 300 percent damage`() {
         assertEquals(1f, state.damageMultiplier, 0.001f)
 
-        state.addPassive("glass_cannon")  // instant-max: 5 stacks = +100% damage
-        assertEquals(2.00f, state.damageMultiplier, 0.001f)
+        state.addPassive("glass_cannon")  // instant-max: +300% damage, 4x total
+        assertEquals(4.00f, state.damageMultiplier, 0.001f)
     }
 
     @Test
@@ -295,11 +295,11 @@ class GameStatePassiveTest {
     fun `multiple different passives combine correctly`() {
         state.addPassive("nano_repair")       // +0.3 regen
         state.addPassive("duplicator_core")   // instant-max: +1 proj (binary effect)
-        state.addPassive("glass_cannon")      // instant-max: +100% dmg, shields disabled
+        state.addPassive("glass_cannon")      // instant-max: +300% dmg, shields disabled
 
         assertEquals(0.3f, state.healthRegen, 0.001f)
         assertEquals(1, state.extraProjectiles)
-        assertEquals(2.00f, state.damageMultiplier, 0.001f)  // 1.0 + 1.0
+        assertEquals(4.00f, state.damageMultiplier, 0.001f)  // 1.0 + 3.0
         assertEquals(0f, state.maxShieldCap, 0.001f)
     }
 

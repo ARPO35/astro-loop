@@ -39,10 +39,10 @@ class VampiricLeecherSystem(
         const val RANGE_PER_STACK = 20f
         /**
          * Default for the `vampiric_core.leech` knob: HP per asteroid per tick, the same at any stack.
-         * 0.2 = 1 HP/s per asteroid, at most 6 HP/s; full-strength 0.5 from the first stack was
-         * too much healing (owner, 2026-10-22).
+         * 0.4 = 2 HP/s per asteroid, at most 12 HP/s with six targets. Doubled from 0.2 on the
+         * owner's 2026-10-25 request; the tick interval stays 0.2s so the stream keeps its cadence.
          */
-        const val LEECH = 0.2f
+        const val LEECH = 0.4f
 
         /** How far the drain reaches with [stacks] stacks. Gameplay and the effect ring both read this. */
         fun rangeFor(stacks: Int): Float =

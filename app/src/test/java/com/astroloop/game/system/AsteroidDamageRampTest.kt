@@ -90,8 +90,8 @@ class AsteroidDamageRampTest {
     fun `a sixteen minute run is taking real damage`() {
         // The design target: 16 minutes should be hard. A fully upgraded hull is 50 base health,
         // 50 from Salvage Plate and 50 of shield, and the invulnerability window allows one contact
-        // hit every 1.5s — so anything under about 60 a touch loses to a maxed Vampiric Core's
-        // 15 HP/s and the run cannot end.
+        // hit every 1.5s — so a maxed Vampiric Core's 12 HP/s barely offsets baseline contact,
+        // and later contact must be decisive.
         val contact = Asteroid.BASE_CONTACT_DAMAGE +
             SpawnSystem.asteroidDamageBonus(16f * 60f, astroLoopMode = true)
         assertTrue("16 minutes must out-damage full healing, got $contact", contact >= 60f)

@@ -62,7 +62,9 @@ object KnobsPassives {
     val vampiricMaxTargets = vampiric.int("max_targets", "Max asteroids drained", VampiricLeecherSystem.MAX_TARGETS, max = 30)
 
     private val glass = KnobGroup("Passives/Glass Cannon", "glass_cannon")
-    val glassDamageBonus = glass.float("damage_bonus", "Damage +", 1f, applies = Applies.ON_EDITOR_CLOSE)
+    // Additive bonus: 3.0 on top of the base 1.0 = 4x total damage. Doubled from 1.0 (2x) on the
+    // owner's 2026-10-25 request.
+    val glassDamageBonus = glass.float("damage_bonus", "Damage +", 3f, applies = Applies.ON_EDITOR_CLOSE)
 
     private val drone = KnobGroup("Passives/Combat Drone", "drone")
     val droneDamage = drone.float("damage", "Bullet damage", 8f)

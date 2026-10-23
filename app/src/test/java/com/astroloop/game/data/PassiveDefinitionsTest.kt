@@ -25,12 +25,12 @@ class PassiveDefinitionsTest {
     }
 
     @Test
-    fun `glass_cannon effect text shows 100 percent`() {
+    fun `glass_cannon effect text shows 300 percent`() {
         val def = PassiveDefinitions.getPassiveDef("glass_cannon")
         assertNotNull(def)
         assertTrue(
-            "Expected '+100%' but got: ${def!!.effectPerStack}",
-            def.effectPerStack.contains("+100%")
+            "Expected '+300%' but got: ${def!!.effectPerStack}",
+            def.effectPerStack.contains("+300%")
         )
     }
 

@@ -63,11 +63,11 @@ class VampiricLeecherSystemTest {
 
     @Test
     fun `tick heals ship and damages asteroid when in range`() {
-        state.addPassive("vampiric_core")  // stacks = 1, leech = 0.2
+        state.addPassive("vampiric_core")  // stacks = 1, leech = 0.4
         val asteroid = inRangeAsteroid()
         system.update(ship, listOf(asteroid), state, 0.21f)  // past 0.2s interval
-        assertEquals(50.2f, ship.health, 0.001f)
-        assertEquals(49.8f, asteroid.health, 0.001f)
+        assertEquals(50.4f, ship.health, 0.001f)
+        assertEquals(49.6f, asteroid.health, 0.001f)
     }
 
     @Test
@@ -81,8 +81,8 @@ class VampiricLeecherSystemTest {
 
         state.addPassive("vampiric_core")
         system.update(ship, listOf(asteroid), state, 0.21f)
-        assertEquals(50.2f, ship.health, 0.001f)
-        assertEquals(49.8f, asteroid.health, 0.001f)
+        assertEquals(50.4f, ship.health, 0.001f)
+        assertEquals(49.6f, asteroid.health, 0.001f)
     }
 
     @Test
@@ -92,13 +92,13 @@ class VampiricLeecherSystemTest {
 
     @Test
     fun `multiple asteroids in range all contribute heal`() {
-        state.addPassive("vampiric_core")  // leech = 0.2 per asteroid
+        state.addPassive("vampiric_core")  // leech = 0.4 per asteroid
         val a1 = inRangeAsteroid()
         val a2 = asteroidAt(100f, 150f, r = 30f)  // edge dist = 50-30 = 20 ≤ 60
         system.update(ship, listOf(a1, a2), state, 0.21f)
-        assertEquals(50.4f, ship.health, 0.001f)
-        assertEquals(49.8f, a1.health, 0.001f)
-        assertEquals(49.8f, a2.health, 0.001f)
+        assertEquals(50.8f, ship.health, 0.001f)
+        assertEquals(49.6f, a1.health, 0.001f)
+        assertEquals(49.6f, a2.health, 0.001f)
     }
 
     @Test
@@ -113,7 +113,7 @@ class VampiricLeecherSystemTest {
 
     @Test
     fun `full health converts half the leech into shields`() {
-        state.addPassive("vampiric_core")  // leech = 0.2 per asteroid
+        state.addPassive("vampiric_core")  // leech = 0.4 per asteroid
         ship.health = ship.maxHealth
         ship.currentShield = 0f
         val asteroid = inRangeAsteroid()
@@ -121,8 +121,8 @@ class VampiricLeecherSystemTest {
         system.update(ship, listOf(asteroid), state, 0.21f)
 
         assertEquals(100f, ship.health, 0.001f)
-        assertEquals(0.1f, ship.currentShield, 0.001f)
-        assertEquals(49.8f, asteroid.health, 0.001f)
+        assertEquals(0.2f, ship.currentShield, 0.001f)
+        assertEquals(49.6f, asteroid.health, 0.001f)
     }
 
     @Test
@@ -135,7 +135,7 @@ class VampiricLeecherSystemTest {
         system.update(ship, listOf(asteroid), state, 0.21f)
 
         assertEquals(50f, ship.currentShield, 0.001f)
-        assertEquals(49.8f, asteroid.health, 0.001f)
+        assertEquals(49.6f, asteroid.health, 0.001f)
     }
 
     @Test
@@ -161,7 +161,7 @@ class VampiricLeecherSystemTest {
 
         system.update(ship, listOf(asteroid), state, 0.21f)
 
-        assertEquals(50.2f, ship.health, 0.001f)
+        assertEquals(50.4f, ship.health, 0.001f)
         assertEquals(0f, ship.currentShield, 0.001f)
     }
 

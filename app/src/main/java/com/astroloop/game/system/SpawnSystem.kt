@@ -96,10 +96,10 @@ class SpawnSystem(
          *
          * Starts where the health ramp starts, because that is where the arithmetic breaks. At
          * baseline 20 damage the invulnerability window allows 13.3 DPS through, while a maxed
-         * Vampiric Core heals 15 HP/s — the player cannot lose, which is what every endless-run
-         * report describes. The slope is set so a 16-minute run is genuinely hard: 68 damage a
-         * touch, about five seconds of sustained contact to die through full healing. The cap lands
-         * at minute 24.7, at 120 a touch — two touches kill a fully upgraded hull.
+         * Vampiric Core heals 12 HP/s — close enough that contact alone barely resolves, and the
+         * ramp makes later contact decisive. The slope is set so a 16-minute run is genuinely hard:
+         * 68 damage a touch, about five seconds of sustained contact to die through full healing.
+         * The cap lands at minute 24.7, at 120 a touch — two touches kill a fully upgraded hull.
          *
          * Not applied to normal or corruption runs, which end at the ten-minute boss.
          */

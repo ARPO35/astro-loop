@@ -158,11 +158,11 @@ passive vampiric_core x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones
 passive vampiric_core x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive vampiric_core x4 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive vampiric_core x5 dmg=1.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive glass_cannon x1 dmg=2.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
-passive glass_cannon x2 dmg=2.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
-passive glass_cannon x3 dmg=2.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
-passive glass_cannon x4 dmg=2.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
-passive glass_cannon x5 dmg=2.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
+passive glass_cannon x1 dmg=4.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
+passive glass_cannon x2 dmg=4.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
+passive glass_cannon x3 dmg=4.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
+passive glass_cannon x4 dmg=4.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
+passive glass_cannon x5 dmg=4.0 regen=0.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=0.0 shieldRegenOff=true
 drops astro=false collected=0 chance=0.05 early=true
 drops astro=false collected=1 chance=0.045 early=true
 drops astro=false collected=2 chance=0.04 early=true
@@ -190,4 +190,4 @@ drops astro=true collected=10 chance=0.025 early=false
 drops astro=true collected=11 chance=0.025 early=false
 drops astro=true collected=12 chance=0.025 early=false
 beam length=1600.0 halfWidth=10.0 tick=0.1
-vampiric tick=0.2 baseRange=60.0 rangePerStack=20.0 leech=0.2 maxTargets=6
+vampiric tick=0.2 baseRange=60.0 rangePerStack=20.0 leech=0.4 maxTargets=6
