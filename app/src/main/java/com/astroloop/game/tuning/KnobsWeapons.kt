@@ -21,7 +21,8 @@ object KnobsWeapons {
     )
     val railgun = WeaponKnobs.base("railgun", "Railgun", damage = 100f, sixteenths = 8, count = 1, speed = 2000f)
     val spaceMines = WeaponKnobs.base("space_mines", "Space Mines", damage = 60f, sixteenths = 16, count = 1, hasArea = true)
-    val solarStorm = WeaponKnobs.base("solar_storm", "Solar Storm", damage = 40f, sixteenths = 16, count = 1, countLabel = "Targets at L1")
+    // 50 = 初始大型岩石（LARGE/ROCK）的生命值：L1 开局刚好一发击杀，见 ADR 0004。
+    val solarStorm = WeaponKnobs.base("solar_storm", "Solar Storm", damage = 50f, sixteenths = 16, count = 1, countLabel = "Targets at L1")
     val novaBlast = WeaponKnobs.base("nova_blast", "Nova Blast", damage = 40f, sixteenths = 32, count = null, hasArea = true)
     val needleGun = WeaponKnobs.base("needle_gun", "Needle Gun", damage = 5f, sixteenths = 2, count = 1, speed = 800f)
     val clusterBomb = WeaponKnobs.base("cluster_bomb", "Cluster Bomb", damage = 60f, sixteenths = 16, count = 1, speed = 350f, hasArea = true)
