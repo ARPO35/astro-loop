@@ -109,6 +109,23 @@ class FireControlTest {
     }
 
     @Test
+    fun `导弹齐射要求第一发锁定敌机`() {
+        val rock = Asteroid().also {
+            it.initialize(100f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+        val farEnemy = enemy(EnemyType.SCOUT, 400f, vx = -100f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(rock, farEnemy), Vector2())
+        val locks = control.allocate(
+            firer(), listOf(rock, farEnemy), 3, 500f, 5f,
+            requireEnemyFirst = true,
+        )
+
+        assertTrue(locks.first().target is EnemyShip)
+    }
+
+    @Test
     fun `Boss 的威胁高于普通敌机`() {
         val boss = Boss().also {
             it.position.set(300f, 0f)

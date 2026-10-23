@@ -37,9 +37,13 @@ class HomingMissiles : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        // 火控与提前量只给玩家。非玩家保持原版：按距离轮流分配，沿 firer 朝向发射。
+        // 导弹没有提前量：始终从船头方向按原版扇形发射。玩家用火控只决定索敌目标，
+        // 并保证这一轮至少有一发锁定敌机；非玩家保持原版按距离轮流索敌。
         val locks = if (firer.isPlayerFirer) {
-            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.homingLifetime.value)
+            fireControl.allocate(
+                firer, targets, count, speed, KnobsWeapons.homingLifetime.value,
+                requireEnemyFirst = true,
+            )
         } else {
             emptyList()
         }
@@ -51,13 +55,8 @@ class HomingMissiles : Weapon(
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
-            val baseAngle = lock?.let {
-                val dx = it.aimPoint.x - firer.position.x
-                val dy = it.aimPoint.y - firer.position.y
-                kotlin.math.atan2(dy, dx)
-            } ?: firer.rotation
             val offsetAngle = (i - (count - 1) / 2f) * KnobsWeapons.homingFan.value
-            val angle = baseAngle + offsetAngle
+            val angle = firer.rotation + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

@@ -37,8 +37,12 @@ class HunterKiller : Weapon(
         val count = getProjectileCount(state)
         val explosionRadius = KnobsWeapons.hunterExplosionRadius.value * areaOf(state) * 1.4f   // mirrors maxed (L5) Cluster Bomb
 
+        // 导弹没有提前量，始终从船头按原版扇形发射；火控只决定索敌目标。
         val locks = if (firer.isPlayerFirer) {
-            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.hunterLifetime.value)
+            fireControl.allocate(
+                firer, targets, count, speed, KnobsWeapons.hunterLifetime.value,
+                requireEnemyFirst = true,
+            )
         } else {
             emptyList()
         }
@@ -50,13 +54,8 @@ class HunterKiller : Weapon(
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
-            val baseAngle = lock?.let {
-                val dx = it.aimPoint.x - firer.position.x
-                val dy = it.aimPoint.y - firer.position.y
-                kotlin.math.atan2(dy, dx)
-            } ?: firer.rotation
             val offsetAngle = (i - (count - 1) / 2f) * 0.2f
-            val angle = baseAngle + offsetAngle
+            val angle = firer.rotation + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

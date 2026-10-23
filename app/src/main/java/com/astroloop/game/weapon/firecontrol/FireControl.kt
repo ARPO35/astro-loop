@@ -108,13 +108,25 @@ class FireControl {
         count: Int,
         projectileSpeed: Float,
         maxTime: Float = 8f,
+        requireEnemyFirst: Boolean = false,
     ): List<Lock> {
         ensureFrame(targets, firer.position, firer.rotation, firer.velocity)
         if (count <= 0) return emptyList()
 
+        val enemyTargets = if (requireEnemyFirst) {
+            ranked.asSequence().map { it.target }.filter { isEnemyTarget(it) }.toHashSet()
+        } else {
+            null
+        }
+
         val locks = ArrayList<Lock>(count)
-        repeat(count) {
-            val candidate = pickBest(null) ?: return@repeat
+        repeat(count) { slot ->
+            val allowed = if (slot == 0 && enemyTargets != null && enemyTargets.isNotEmpty()) {
+                enemyTargets
+            } else {
+                null
+            }
+            val candidate = pickBest(allowed) ?: return@repeat
             val lane = assigned[candidate.target] ?: 0
             assigned[candidate.target] = lane + 1
             val solution = aimPoint(firer, candidate.target, projectileSpeed, maxTime, lane)
@@ -151,6 +163,13 @@ class FireControl {
             picked.add(candidate.target)
         }
         return picked
+    }
+
+    /** 导弹优先目标：可伤害的敌机或 Boss；跃迁中的敌机不算。 */
+    private fun isEnemyTarget(entity: Entity): Boolean = when (entity) {
+        is EnemyShip -> entity.isActive && !entity.isWarping
+        is Boss -> entity.isActive
+        else -> false
     }
 
     private fun pickBest(allowed: Set<Entity>?): RankedTarget? {

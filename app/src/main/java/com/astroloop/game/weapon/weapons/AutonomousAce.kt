@@ -33,8 +33,12 @@ class AutonomousAce : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
+        // 导弹没有提前量，始终从船头按原版扇形发射；火控只决定索敌目标。
         val locks = if (firer.isPlayerFirer) {
-            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.aceLifetime.value)
+            fireControl.allocate(
+                firer, targets, count, speed, KnobsWeapons.aceLifetime.value,
+                requireEnemyFirst = true,
+            )
         } else {
             emptyList()
         }
@@ -46,13 +50,8 @@ class AutonomousAce : Weapon(
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
-            val baseAngle = lock?.let {
-                val dx = it.aimPoint.x - firer.position.x
-                val dy = it.aimPoint.y - firer.position.y
-                kotlin.math.atan2(dy, dx)
-            } ?: firer.rotation
             val offsetAngle = (i - (count - 1) / 2f) * 0.3f
-            val angle = baseAngle + offsetAngle
+            val angle = firer.rotation + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

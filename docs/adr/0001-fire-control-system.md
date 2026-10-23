@@ -55,11 +55,12 @@ ship.rotation, ship.velocity)` 重算一次威胁排序。威胁分以**预计�
 **只有玩家 Ship 使用火控。** 玩家的沿方向发射武器先取火控瞄准角，再叠加原有扇形/锥形/抖动：
 
 - Pulse Cannon 的直线弹（Storm Cannon 是全向螺旋，没有单一瞄准方向，保留原弹道）
-- Homing Missiles、Autonomous Ace、Hunter-Killer
 - Scatter Shot、Leech Burst、Needle Gun、Siphon Needles
 - Cluster Bomb、Flak Cannon、Flak Barrage、Railgun
 
 Railgun 前向弹取最高威胁目标，后向弹取第二目标；没有第二目标时朝主目标反方向。
+Homing Missiles、Autonomous Ace、Hunter-Killer 是导弹：**初始不计算提前量**，始终从船头按
+原版扇形向前发射；火控只决定索敌目标，并保证一轮齐射至少一发锁定敌机（有敌机时）。
 
 不计算提前量的武器是有意保留的：
 
@@ -87,8 +88,8 @@ Railgun 前向弹取最高威胁目标，后向弹取第二目标；没有第二
 - 接近速度低于 20 px/s（目标在远离或横向漂移）；
 - 距离小于 100 px（末段避免比例制导抖动）。
 
-发射时，玩家导弹先按火控分配的瞄准点确定初速方向，再叠加原有发射扇形。这样导弹不需要先绕回
-目标，比例制导只做修正。
+发射时，玩家导弹沿船头方向按原版扇形向前发射，不做提前量；比例制导只负责飞行中修正。
+目标分配保证一轮齐射至少一发锁定敌机，避免全部导弹转向小行星。
 
 玩家导弹失去目标（目标死亡、失效或跃迁）后，从当前在场的敌机/小行星/Boss 中改追最近目标。
 非玩家导弹没有这个重定向，保持原版行为。
