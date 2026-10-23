@@ -9,6 +9,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class SiphonNeedles : Weapon(
@@ -27,18 +28,21 @@ class SiphonNeedles : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
         val damage = getDamage(state)
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
             // Own spread knob; its default matches NeedleGun's so the arcs start identical
             val spreadAngle = (i - (count - 1) / 2f) * KnobsWeapons.siphonSpread.value
-            val angle = firer.rotation + spreadAngle
+            val angle = baseAngle + spreadAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

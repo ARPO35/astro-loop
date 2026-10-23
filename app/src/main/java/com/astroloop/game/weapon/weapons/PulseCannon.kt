@@ -11,6 +11,7 @@ import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.SpreadFan
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class PulseCannon : Weapon(
@@ -35,7 +36,8 @@ class PulseCannon : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -43,19 +45,9 @@ class PulseCannon : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        // Aimed mode: fire toward nearest target instead of ship facing direction
-        val nearestTarget = targets
-            .filter { it.isActive }
-            .minByOrNull { firer.position.distanceSquared(it.position) }
-
-        val baseAngle = if (nearestTarget != null) {
-            // Aim toward nearest target
-            val toTarget = nearestTarget.position - firer.position
-            toTarget.angle()
-        } else {
-            // Fallback to ship facing direction
-            firer.rotation
-        }
+        // 火控瞄准：取威胁最高的目标，并按弹速计算提前量。没有目标时退回船头方向。
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         val spreadAngle = KnobsWeapons.pulseSpread.value
 

@@ -10,6 +10,7 @@ import com.astroloop.game.entity.Projectile
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.ClusterBomb
 import com.astroloop.game.weapon.weapons.FrostRing
 import com.astroloop.game.weapon.weapons.IonOrbiters
@@ -82,7 +83,7 @@ object WeaponProbe {
         if (duplicator) state.extraProjectiles = KnobsPassives.duplicatorExtraProjectiles.value
         val weapon = build(id, level)
         val pool = EntityPool({ Projectile() }, 16)
-        weapon.fire(firer(), state, pool, targets())
+        weapon.fire(firer(), state, pool, targets(), FireControl())
         var t = 0f
         while (t < SETTLE_SECONDS) {
             settle(weapon, pool, state)

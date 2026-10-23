@@ -7,6 +7,7 @@ import com.astroloop.game.entity.EntityPool
 import com.astroloop.game.entity.Projectile
 import com.astroloop.game.entity.Firer
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.math.cos
 import kotlin.math.sin
 import com.astroloop.game.tuning.KnobsWeapons
@@ -45,7 +46,8 @@ class EnergySaw : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         // No-op: Energy Saw doesn't fire projectiles
     }

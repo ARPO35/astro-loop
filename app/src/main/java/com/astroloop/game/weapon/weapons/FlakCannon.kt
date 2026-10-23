@@ -10,6 +10,7 @@ import com.astroloop.game.util.Vector2
 import com.astroloop.game.core.GameConfig
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.random.Random
 import com.astroloop.game.tuning.KnobsWeapons
 
@@ -29,7 +30,8 @@ class FlakCannon : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -37,10 +39,12 @@ class FlakCannon : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
         val explosionRadius = getExplosionRadius(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
             val spreadAngle = (i - (count - 1) / 2f) * KnobsWeapons.flakSpread.value
-            val angle = firer.rotation + spreadAngle + (Random.nextFloat() - 0.5f) * KnobsWeapons.flakJitter.value
+            val angle = baseAngle + spreadAngle + (Random.nextFloat() - 0.5f) * KnobsWeapons.flakJitter.value
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

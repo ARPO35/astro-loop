@@ -1,5 +1,6 @@
 package com.astroloop.game.weapon
 
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.Railgun
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -53,7 +54,7 @@ class RailgunFrontBackTest {
     private fun volley(extra: Int): List<Pair<Float, com.astroloop.game.entity.Projectile>> {
         val state = com.astroloop.game.core.GameState().also { it.reset(); it.extraProjectiles = extra }
         val pool = com.astroloop.game.entity.EntityPool({ com.astroloop.game.entity.Projectile() }, 20)
-        Railgun().also { it.level = 5 }.fire(firer(), state, pool, emptyList())
+        Railgun().also { it.level = 5 }.fire(firer(), state, pool, emptyList(), FireControl())
         return pool.getActiveEntities().map { p ->
             val heading = kotlin.math.atan2(p.velocity.y, p.velocity.x)
             var off = heading - facing

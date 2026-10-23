@@ -9,6 +9,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.random.Random
 import com.astroloop.game.tuning.KnobsWeapons
 
@@ -38,7 +39,8 @@ class LeechBurst : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -49,9 +51,11 @@ class LeechBurst : Weapon(
         // Read from ScatterShot rather than copied, so this cannot drift wider than the weapon it
         // evolves from — an evolution that scattered worse than its base would be a downgrade.
         val spreadAngle = SPREAD_CONE_RADIANS * areaOf(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
-            val angle = firer.rotation + (Random.nextFloat() - 0.5f) * spreadAngle
+            val angle = baseAngle + (Random.nextFloat() - 0.5f) * spreadAngle
             val direction = Vector2.fromAngle(angle)
 
             // Slight speed variation for organic scatter feel

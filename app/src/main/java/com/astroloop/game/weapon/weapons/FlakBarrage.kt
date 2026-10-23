@@ -9,6 +9,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.random.Random
 import com.astroloop.game.tuning.KnobsWeapons
 
@@ -28,18 +29,21 @@ class FlakBarrage : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
         val damage = getDamage(state)
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
             // Wide spread with slight random jitter (matches FlakCannon pattern)
             val spreadAngle = (i - (count - 1) / 2f) * KnobsWeapons.barrageSpread.value
-            val angle = firer.rotation + spreadAngle + (Random.nextFloat() - 0.5f) * KnobsWeapons.barrageJitter.value
+            val angle = baseAngle + spreadAngle + (Random.nextFloat() - 0.5f) * KnobsWeapons.barrageJitter.value
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

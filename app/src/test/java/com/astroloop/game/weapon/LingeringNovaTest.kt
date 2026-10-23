@@ -5,6 +5,7 @@ import com.astroloop.game.entity.EntityPool
 import com.astroloop.game.entity.Firer
 import com.astroloop.game.entity.Projectile
 import com.astroloop.game.util.Vector2
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.LingeringNova
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -27,7 +28,7 @@ class LingeringNovaTest {
         val pool = EntityPool({ Projectile() }, 50)
         val weapon = LingeringNova().also { it.level = 1 }
 
-        weapon.fire(stubFirer(), state, pool, emptyList())
+        weapon.fire(stubFirer(), state, pool, emptyList(), FireControl())
 
         val active = pool.getActiveEntities()
         assertEquals(9, active.size)
@@ -41,7 +42,7 @@ class LingeringNovaTest {
         val pool = EntityPool({ Projectile() }, 50)
         val weapon = LingeringNova().also { it.level = 1 }
 
-        weapon.fire(stubFirer(), state, pool, emptyList())
+        weapon.fire(stubFirer(), state, pool, emptyList(), FireControl())
         assertEquals(9, pool.activeCount())
 
         weapon.updatePending(weapon.getCooldown(state) + 0.1f, pool, state)
@@ -54,7 +55,7 @@ class LingeringNovaTest {
         val pool = EntityPool({ Projectile() }, 50)
         val weapon = LingeringNova().also { it.level = 1 }
 
-        weapon.fire(stubFirer(), state, pool, emptyList())
+        weapon.fire(stubFirer(), state, pool, emptyList(), FireControl())
         weapon.updatePending(0.5f, pool, state)
         assertEquals(9, pool.activeCount())
     }

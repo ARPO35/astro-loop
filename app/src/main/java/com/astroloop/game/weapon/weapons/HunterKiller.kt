@@ -9,6 +9,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class HunterKiller : Weapon(
@@ -26,7 +27,8 @@ class HunterKiller : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -35,13 +37,19 @@ class HunterKiller : Weapon(
         val count = getProjectileCount(state)
         val explosionRadius = KnobsWeapons.hunterExplosionRadius.value * areaOf(state) * 1.4f   // mirrors maxed (L5) Cluster Bomb
 
-        val sortedTargets = targets
-            .filter { it.isActive }
-            .sortedBy { firer.position.distanceSquared(it.position) }
+        val locks = fireControl.allocate(
+            firer, targets, count, speed, KnobsWeapons.hunterLifetime.value
+        )
 
         for (i in 0 until count) {
+            val lock = locks.getOrNull(i)
+            val baseAngle = lock?.let {
+                val dx = it.aimPoint.x - firer.position.x
+                val dy = it.aimPoint.y - firer.position.y
+                kotlin.math.atan2(dy, dx)
+            } ?: firer.rotation
             val offsetAngle = (i - (count - 1) / 2f) * 0.2f
-            val angle = firer.rotation + offsetAngle
+            val angle = baseAngle + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()
@@ -58,7 +66,7 @@ class HunterKiller : Weapon(
             projectile.weaponId = id
             projectile.radius = 12f
             projectile.homingStrength = KnobsWeapons.hunterHoming.value
-            projectile.target = sortedTargets.getOrNull(i % sortedTargets.size.coerceAtLeast(1))
+            projectile.target = lock?.target
 
             projectile.explodeOnDeath = true
             projectile.explosionRadius = explosionRadius

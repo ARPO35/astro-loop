@@ -9,6 +9,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.math.PI
 import com.astroloop.game.tuning.KnobsWeapons
 
@@ -43,7 +44,8 @@ class FrostRing : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         innerOrbiters.removeAll { !it.isActive }
         outerOrbiters.removeAll { !it.isActive }

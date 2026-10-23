@@ -12,6 +12,7 @@ import com.astroloop.game.tuning.KnobsEnemies
 import com.astroloop.game.tuning.KnobsWeapons
 import com.astroloop.game.tuning.Tunables
 import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.SolarStorm
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -96,7 +97,7 @@ class EnemyWeaponMirrorTest {
             override val radius = enemy.radius
             override val isEnemyFirer = true
         }
-        WeaponFactory.createWeapon(weaponId)!!.fire(firer, GameState.createNeutral(), pool, listOf(ship))
+        WeaponFactory.createWeapon(weaponId)!!.fire(firer, GameState.createNeutral(), pool, listOf(ship), FireControl())
         return pool.getActiveEntities()
     }
 

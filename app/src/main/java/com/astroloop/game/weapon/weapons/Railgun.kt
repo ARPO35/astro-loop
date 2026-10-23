@@ -6,6 +6,7 @@ import com.astroloop.game.entity.*
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 import com.astroloop.game.tuning.forLevel
 import kotlin.math.PI
@@ -36,7 +37,8 @@ class Railgun : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -44,15 +46,24 @@ class Railgun : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        // Slugs alternate front, back, front…: with Duplicator Core's second slug, one flies straight
-        // ahead and one straight behind (owner, 2026-10-20). Lab counts above two fan each side as before.
+        // Slugs alternate front, back, front…: with Duplicator Core's second slug, one flies at the
+        // primary threat and one at the secondary threat. With no secondary, the rear slug fires
+        // opposite the primary aim.
+        val primaryAim = fireControl.aimAngle(firer, targets, speed, KnobsWeapons.railgunLifetime.value)
+        val secondaryAim = fireControl.secondaryAimAngle(firer, targets, speed, KnobsWeapons.railgunLifetime.value)
+        val frontAngle = if (primaryAim.isNaN()) firer.rotation else primaryAim
+        val backAngle = when {
+            !secondaryAim.isNaN() -> secondaryAim
+            primaryAim.isNaN() -> firer.rotation + PI.toFloat()
+            else -> primaryAim + PI.toFloat()
+        }
         val frontCount = count - count / 2
         val backCount = count / 2
         for (i in 0 until count) {
             val isBack = i % 2 == 1
             val sideCount = if (isBack) backCount else frontCount
             val offsetAngle = (i / 2 - (sideCount - 1) / 2f) * 0.15f
-            val angle = firer.rotation + offsetAngle + if (isBack) PI.toFloat() else 0f
+            val angle = (if (isBack) backAngle else frontAngle) + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

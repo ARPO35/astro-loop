@@ -10,6 +10,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.random.Random
 import com.astroloop.game.tuning.KnobsWeapons
 
@@ -53,7 +54,8 @@ class ScatterShot : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -61,10 +63,12 @@ class ScatterShot : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
         val spreadAngle = SPREAD_CONE_RADIANS * areaOf(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
-            // Random spread within cone
-            val angle = firer.rotation + (Random.nextFloat() - 0.5f) * spreadAngle
+            // 先按提前量对准目标，再在锥形范围内随机散布
+            val angle = baseAngle + (Random.nextFloat() - 0.5f) * spreadAngle
             val direction = Vector2.fromAngle(angle)
 
             // Slight speed variation

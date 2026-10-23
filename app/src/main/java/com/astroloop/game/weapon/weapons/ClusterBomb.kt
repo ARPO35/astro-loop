@@ -10,6 +10,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class ClusterBomb : Weapon(
@@ -40,7 +41,8 @@ class ClusterBomb : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -48,10 +50,12 @@ class ClusterBomb : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
         val explosionRadius = getExplosionRadius(state)
+        val aim = fireControl.aimAngle(firer, targets, speed)
+        val baseAngle = if (aim.isNaN()) firer.rotation else aim
 
         for (i in 0 until count) {
             val offsetAngle = (i - (count - 1) / 2f) * KnobsWeapons.clusterFan.value
-            val angle = firer.rotation + offsetAngle
+            val angle = baseAngle + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()

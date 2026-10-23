@@ -5,6 +5,7 @@ import com.astroloop.game.core.GameState
 import com.astroloop.game.entity.*
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class SolarStorm : Weapon(
@@ -29,7 +30,8 @@ class SolarStorm : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -41,10 +43,10 @@ class SolarStorm : Weapon(
         }
         val targetCount = getTargetCount()
 
-        // Pick random targets - only target enemies visible on screen
+        // 只打击屏幕内、可伤害的目标；目标选择走火控的威胁排序，不再随机。
         val halfW = state.screenWidth / 2f
         val halfH = state.screenHeight / 2f
-        val validTargets = targets.filter {
+        val candidates = targets.filter {
             it.isActive &&
             it.position.x > firer.position.x - halfW && it.position.x < firer.position.x + halfW &&
             it.position.y > firer.position.y - halfH && it.position.y < firer.position.y + halfH &&
@@ -55,7 +57,9 @@ class SolarStorm : Weapon(
             // through the deflector shield that stops every other weapon, and drew a teleporting
             // dodge out of a boss that was supposed to be untouchable.
             (it !is Boss || (!it.isInvulnerable && !it.shielded))
-        }.shuffled().take(targetCount)
+        }
+        // 瞬间落雷没有飞行时间，因此不需要提前量；这里只做威胁排序与目标分配。
+        val validTargets = fireControl.selectTargets(firer, candidates, targetCount)
 
         val weaponColor = ShipDefinitions.getWeaponColor("solar_storm", state.isCorruptionRun)
         for (target in validTargets) {

@@ -10,6 +10,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.tuning.KnobsWeapons
 
 class HomingMissiles : Weapon(
@@ -27,7 +28,8 @@ class HomingMissiles : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -35,14 +37,20 @@ class HomingMissiles : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        // Sort targets by distance
-        val sortedTargets = targets
-            .filter { it.isActive }
-            .sortedBy { firer.position.distanceSquared(it.position) }
+        // 按威胁排序并由火控分配目标；同一目标分到多枚导弹时，瞄准点会横向错开。
+        val locks = fireControl.allocate(
+            firer, targets, count, speed, KnobsWeapons.homingLifetime.value
+        )
 
         for (i in 0 until count) {
+            val lock = locks.getOrNull(i)
+            val baseAngle = lock?.let {
+                val dx = it.aimPoint.x - firer.position.x
+                val dy = it.aimPoint.y - firer.position.y
+                kotlin.math.atan2(dy, dx)
+            } ?: firer.rotation
             val offsetAngle = (i - (count - 1) / 2f) * KnobsWeapons.homingFan.value
-            val angle = firer.rotation + offsetAngle
+            val angle = baseAngle + offsetAngle
             val direction = Vector2.fromAngle(angle)
 
             val projectile = projectilePool.obtain()
@@ -58,7 +66,7 @@ class HomingMissiles : Weapon(
             projectile.isEnemyProjectile = firer.isEnemyFirer
             projectile.weaponId = id
             projectile.homingStrength = KnobsWeapons.homingStrength.value
-            projectile.target = sortedTargets.getOrNull(i % sortedTargets.size.coerceAtLeast(1))
+            projectile.target = lock?.target
             projectile.color = ShipDefinitions.getWeaponColor("homing_missiles", state.isCorruptionRun)
         }
 

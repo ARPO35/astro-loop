@@ -1,8 +1,11 @@
 package com.astroloop.game.entity
 
 import com.astroloop.game.util.Vector2
+import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 enum class ProjectileType {
     BULLET,         // Standard projectile
@@ -169,25 +172,46 @@ class Projectile : Entity() {
     }
 
     private fun updateHoming(deltaTime: Float) {
-        target?.let { t ->
-            if (t.isActive) {
-                val toTarget = Vector2(t.position.x - position.x, t.position.y - position.y)
-                val targetAngle = toTarget.angle()
-                val currentAngle = velocity.angle()
+        val t = target
+        if (t != null && t.isActive && homingStrength > 0f) {
+            val dx = t.position.x - position.x
+            val dy = t.position.y - position.y
+            val rangeSq = dx * dx + dy * dy
+            val speed = velocity.length()
 
-                var angleDiff = targetAngle - currentAngle
-                while (angleDiff > Math.PI) angleDiff -= (2 * Math.PI).toFloat()
-                while (angleDiff < -Math.PI) angleDiff += (2 * Math.PI).toFloat()
+            if (rangeSq > 1f && speed > 1f) {
+                val range = sqrt(rangeSq)
+                val relVx = t.velocity.x - velocity.x
+                val relVy = t.velocity.y - velocity.y
+                // 接近速度与视线角速度，都是比例制导的输入。
+                val closing = -(dx * relVx + dy * relVy) / range
+                val losRate = (dx * relVy - dy * relVx) / rangeSq
+                val maxTurn = homingStrength * deltaTime
 
-                val turnAmount = homingStrength * deltaTime
-                val newAngle = currentAngle + angleDiff.coerceIn(-turnAmount, turnAmount)
+                val desiredTurn = if (closing > MIN_CLOSING_SPEED && range > ENDGAME_RANGE) {
+                    // 纯比例制导：转向角速度 = N · Vc · λdot / Vm。
+                    NAVIGATION_CONSTANT * closing * losRate / speed * deltaTime
+                } else {
+                    // 目标正在远离、横向漂移，或已进入末段：退化为追瞄，保证最终收敛。
+                    val angleError = wrapAngle(atan2(dy, dx) - velocity.angle())
+                    angleError * PURSUIT_GAIN * deltaTime
+                }
 
-                val speed = velocity.length()
-                velocity.set(Vector2.fromAngle(newAngle, speed))
+                val turn = desiredTurn.coerceIn(-maxTurn, maxTurn)
+                if (turn != 0f) {
+                    velocity.set(Vector2.fromAngle(velocity.angle() + turn, speed))
+                }
             }
         }
 
         super.update(deltaTime)
+    }
+
+    private fun wrapAngle(angle: Float): Float {
+        var wrapped = angle
+        while (wrapped > PI) wrapped -= (2f * PI).toFloat()
+        while (wrapped < -PI) wrapped += (2f * PI).toFloat()
+        return wrapped
     }
 
     private fun updateOrbiter(deltaTime: Float) {
@@ -401,5 +425,14 @@ class Projectile : Entity() {
         const val GRAVITY_SINK_DURATION = 0.3f
         const val GRAVITY_SINK_RADIUS = 150f
         const val GRAVITY_SINK_FORCE = 180f
+
+        /** 比例制导的导航常数 N，3 是拦截匀速目标的常用值。 */
+        private const val NAVIGATION_CONSTANT = 3f
+        /** 追瞄回退时的角速度增益（1/s）。 */
+        private const val PURSUIT_GAIN = 6f
+        /** 低于这个接近速度就认为比例制导不可靠，改用追瞄。 */
+        private const val MIN_CLOSING_SPEED = 20f
+        /** 末段距离内强制追瞄，避免比例制导在极近距离抖动。 */
+        private const val ENDGAME_RANGE = 100f
     }
 }

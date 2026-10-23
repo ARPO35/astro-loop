@@ -6,6 +6,7 @@ import com.astroloop.game.core.GameState
 import com.astroloop.game.entity.*
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.FrostRing
 import com.astroloop.game.weapon.weapons.IonOrbiters
 import com.astroloop.game.weapon.weapons.LingeringNova
@@ -16,6 +17,9 @@ class WeaponSystem(
     private val projectilePool: EntityPool<Projectile>
 ) {
     private val activeWeapons = mutableMapOf<String, Weapon>()
+
+    /** 本帧所有玩家武器共享的火控，负责目标分配，避免多枚弹丸重复扑向同一目标。 */
+    private val fireControl = FireControl()
 
     /** Wall clock the beat grid is measured against. Tests replace it with a fake clock. */
     internal var nowMs: () -> Long = System::currentTimeMillis
@@ -45,6 +49,9 @@ class WeaponSystem(
             }
         }
 
+        // 每帧重算威胁排序并清空上一帧的目标分配。
+        fireControl.beginFrame(targets, ship.position)
+
         // Auto-fire all weapons (beat-synced)
         for (weapon in activeWeapons.values) {
             if (weapon.canFire()) {
@@ -70,7 +77,7 @@ class WeaponSystem(
                     }
                 }
 
-                weapon.fire(ship, state, projectilePool, targets)
+                weapon.fire(ship, state, projectilePool, targets, fireControl)
                 if (!isSaw && !isOrbiter) {
                     weapon.beatSynced = true
                     SoundManager.playSFX("sfx_weapon_${weapon.id}", SoundManager.getWeaponSfxVolume(weapon.id))

@@ -8,6 +8,7 @@ import com.astroloop.game.entity.Firer
 import com.astroloop.game.entity.EnemyShip
 import com.astroloop.game.entity.Asteroid
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -64,7 +65,8 @@ class WarpSaw : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         // No-op: Warp Saw doesn't fire projectiles
     }

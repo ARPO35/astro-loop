@@ -1,0 +1,155 @@
+package com.astroloop.game.weapon
+
+import com.astroloop.game.data.EnemyType
+import com.astroloop.game.entity.Asteroid
+import com.astroloop.game.entity.AsteroidSize
+import com.astroloop.game.entity.AsteroidType
+import com.astroloop.game.entity.Boss
+import com.astroloop.game.entity.EnemyShip
+import com.astroloop.game.entity.Entity
+import com.astroloop.game.entity.Firer
+import com.astroloop.game.util.Vector2
+import com.astroloop.game.weapon.firecontrol.FireControl
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import kotlin.math.abs
+
+class FireControlTest {
+
+    private fun firer(x: Float = 0f, y: Float = 0f) = object : Firer {
+        override val position = Vector2(x, y)
+        override val velocity = Vector2()
+        override val rotation = 0f
+        override val radius = 12f
+        override val isEnemyFirer = false
+    }
+
+    private fun enemy(
+        type: EnemyType,
+        x: Float,
+        y: Float = 0f,
+        vx: Float = 0f,
+        vy: Float = 0f,
+    ): EnemyShip = EnemyShip().also {
+        it.initialize(x, y, type, emptyList())
+        it.spawnTime = it.warpInDuration
+        it.spawnShieldTimer = 0f
+        it.velocity.set(vx, vy)
+    }
+
+    private fun dummyTarget(
+        x: Float,
+        y: Float = 0f,
+        vx: Float = 0f,
+        vy: Float = 0f,
+        radius: Float = 10f,
+    ): Entity = object : Entity() {
+        init {
+            position.set(x, y)
+            velocity.set(vx, vy)
+            this.radius = radius
+            maxHealth = 100f
+            health = 100f
+        }
+    }
+
+    @Test
+    fun `威胁排序偏向更近、更快、更高 tier 的敌人`() {
+        val farFodder = enemy(EnemyType.SCOUT, 800f, vx = -50f)
+        val nearElite = enemy(EnemyType.SPECTER, 200f, vx = -200f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(farFodder, nearElite), Vector2())
+
+        val ranked = control.rankedTargets()
+        assertEquals(nearElite, ranked[0].target)
+        assertTrue(ranked[0].threat > ranked[1].threat)
+    }
+
+    @Test
+    fun `Boss 的威胁高于普通敌机`() {
+        val boss = Boss().also {
+            it.position.set(300f, 0f)
+            it.isActive = true
+            it.isInvulnerable = false
+            it.shielded = false
+        }
+        val fodder = enemy(EnemyType.SCOUT, 100f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(fodder, boss), Vector2())
+
+        assertEquals(boss, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `跃迁中的目标会被降权`() {
+        val warping = enemy(EnemyType.SCOUT, 100f).also { it.spawnTime = 0f }
+        val active = enemy(EnemyType.SCOUT, 300f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(warping, active), Vector2())
+
+        assertEquals(active, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `五枚导弹对三个同等威胁目标时全部目标都被覆盖且不过度集中`() {
+        val targets = listOf(
+            enemy(EnemyType.SCOUT, 200f),
+            enemy(EnemyType.SCOUT, 220f),
+            enemy(EnemyType.SCOUT, 240f),
+        )
+        val control = FireControl()
+        control.beginFrame(targets, Vector2())
+
+        val locks = control.allocate(firer(), targets, 5, 500f, 5f)
+        val counts = locks.groupingBy { it.target }.eachCount()
+
+        assertEquals(5, locks.size)
+        assertEquals(3, counts.size)
+        assertTrue("单目标分到 ${counts.values}", counts.values.maxOrNull()!! <= 2)
+    }
+
+    @Test
+    fun `同一目标的弹道瞄准点会横向错开`() {
+        val target = dummyTarget(300f, radius = 20f)
+        val control = FireControl()
+        control.beginFrame(listOf(target), Vector2())
+
+        val locks = control.allocate(firer(), listOf(target), 3, 500f, 5f)
+        val offsets = locks.map { it.aimPoint.y }
+
+        assertEquals(3, locks.size)
+        assertEquals(3, offsets.distinct().size)
+        assertEquals(0f, offsets[0], 0.001f)
+        assertTrue(offsets.any { it > 0f })
+        assertTrue(offsets.any { it < 0f })
+        for (lock in locks) assertTrue(abs(lock.aimPoint.x - 300f) < 0.01f)
+    }
+
+    @Test
+    fun `瞬间武器只选择允许列表内的目标`() {
+        val first = enemy(EnemyType.SCOUT, 100f)
+        val second = enemy(EnemyType.SCOUT, 200f)
+        val control = FireControl()
+        control.beginFrame(listOf(first, second), Vector2())
+
+        val picked = control.selectTargets(firer(), listOf(second), 2)
+
+        assertEquals(listOf(second), picked)
+    }
+
+    @Test
+    fun `小行星也可以作为火控目标`() {
+        val rock = Asteroid().also {
+            it.initialize(250f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+        val control = FireControl()
+        control.beginFrame(listOf(rock), Vector2())
+
+        val locks = control.allocate(firer(), listOf(rock), 1, 600f, 5f)
+        assertEquals(rock, locks.single().target)
+    }
+}

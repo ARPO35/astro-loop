@@ -8,6 +8,7 @@ import com.astroloop.game.entity.ProjectileType
 import com.astroloop.game.entity.Firer
 import com.astroloop.game.data.ShipDefinitions
 import com.astroloop.game.weapon.Weapon
+import com.astroloop.game.weapon.firecontrol.FireControl
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -23,7 +24,8 @@ class PhoenixFlare : Weapon(
         firer: Firer,
         state: GameState,
         projectilePool: EntityPool<Projectile>,
-        targets: List<Entity>
+        targets: List<Entity>,
+        fireControl: FireControl
     ) {
         if (!canFire()) return
 
@@ -35,11 +37,13 @@ class PhoenixFlare : Weapon(
         // Fire a pulse ring at each of up to 3 on-screen targets (Solar Storm character: strikes at enemy locations)
         val halfW = state.screenWidth / 2f
         val halfH = state.screenHeight / 2f
-        val validTargets = targets.filter {
+        val candidates = targets.filter {
             it.isActive &&
             it.position.x > firer.position.x - halfW && it.position.x < firer.position.x + halfW &&
             it.position.y > firer.position.y - halfH && it.position.y < firer.position.y + halfH
-        }.shuffled().take(3)
+        }
+        // 环形爆发在目标当前位置生成，不需要提前量；目标选择按威胁排序。
+        val validTargets = fireControl.selectTargets(firer, candidates, 3)
 
         for ((r, target) in validTargets.withIndex()) {
             val speed = KnobsWeapons.phoenixRingSpeed[r].value * areaOf(state)

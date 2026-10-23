@@ -14,6 +14,7 @@ import com.astroloop.game.system.VampiricLeecherSystem
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.*
 
 /**
@@ -50,7 +51,7 @@ object GoldenSnapshot {
     fun exerciseWeapon(id: String, level: Int, state: GameState = freshState()): List<Projectile> {
         val weapon = WeaponFactory.createWeapon(id)!!.also { it.level = level }
         val pool = EntityPool({ Projectile() }, 64)
-        weapon.fire(firer(), state, pool, targets())
+        weapon.fire(firer(), state, pool, targets(), FireControl())
         repeat(100) { tick(weapon, pool, state, 0.05f) }
         return pool.getAllInUse()
     }

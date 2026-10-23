@@ -12,6 +12,7 @@ import com.astroloop.game.entity.VisualEffectManager
 import com.astroloop.game.tuning.Tunables
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.weapon.WeaponFactory
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.SolarStorm
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -54,7 +55,7 @@ class FleetWeaponMirrorTest {
             override val isEnemyFirer = false
         }
         val state = GameState.createNeutral().also { it.damageMultiplier = 0f }
-        WeaponFactory.createWeapon(weaponId)!!.fire(firer, state, pool, listOf(boss))
+        WeaponFactory.createWeapon(weaponId)!!.fire(firer, state, pool, listOf(boss), FireControl())
         return pool.getActiveEntities()
     }
 

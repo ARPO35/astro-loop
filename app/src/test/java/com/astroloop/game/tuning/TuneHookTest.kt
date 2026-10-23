@@ -6,6 +6,7 @@ import com.astroloop.game.entity.Projectile
 import com.astroloop.game.entity.Ship
 import com.astroloop.game.render.PauseTuneButton
 import com.astroloop.game.system.WeaponSystem
+import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.IonOrbiters
 import org.junit.After
 import org.junit.Assert.*
@@ -54,7 +55,7 @@ class TuneHookTest {
         val weapons = WeaponSystem(pool)
         weapons.addWeapon("ion_orbiters", state)
         val ion = weapons.getWeapon("ion_orbiters") as IonOrbiters
-        ion.fire(Ship(), state, pool, emptyList())
+        ion.fire(Ship(), state, pool, emptyList(), FireControl())
         val before = pool.getAllInUse().filter { it.isActive && it.lifetime > 100f }
         assertEquals(2, before.size)
         Tunables.set(KnobsWeapons.ionOrbiters.count!!, 4f)
@@ -62,7 +63,7 @@ class TuneHookTest {
         // the old orbiters are fading (short lifetime), not removed
         assertTrue(before.all { it.isActive && it.lifetime < 100f })
         assertEquals(0f, ion.cooldownTimer)
-        ion.fire(Ship(), state, pool, emptyList())
+        ion.fire(Ship(), state, pool, emptyList(), FireControl())
         assertEquals(4, pool.getAllInUse().count { it.isActive && it.lifetime > 100f })
     }
 

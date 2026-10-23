@@ -1,9 +1,13 @@
 package com.astroloop.game.weapon
 
 import com.astroloop.game.core.GameState
+import com.astroloop.game.entity.Entity
+import com.astroloop.game.entity.EntityPool
 import com.astroloop.game.entity.EntityPools
 import com.astroloop.game.entity.Firer
+import com.astroloop.game.entity.Projectile
 import com.astroloop.game.tuning.WeaponKnobs
+import com.astroloop.game.weapon.firecontrol.FireControl
 
 abstract class Weapon(
     val id: String,
@@ -66,11 +70,16 @@ abstract class Weapon(
 
     fun canFire(): Boolean = cooldownTimer <= 0
 
+    /**
+     * 开火。[fireControl] 由 WeaponSystem 每帧传入并共享目标分配；一次性调用（测试、敌机、
+     * 舰队）可以省略，默认新建一个只服务本次开火的实例。
+     */
     abstract fun fire(
         firer: Firer,
         state: GameState,
-        projectilePool: com.astroloop.game.entity.EntityPool<com.astroloop.game.entity.Projectile>,
-        targets: List<com.astroloop.game.entity.Entity>
+        projectilePool: EntityPool<Projectile>,
+        targets: List<Entity>,
+        fireControl: FireControl = FireControl()
     )
 
     open fun onLevelUp() {
