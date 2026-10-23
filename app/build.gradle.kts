@@ -17,6 +17,10 @@ val keystoreProperties = Properties().apply {
     if (hasReleaseKeystore) load(FileInputStream(keystorePropertiesFile))
 }
 
+// CI 用运行序号覆盖 versionCode，保证每次产出的 APK 都能覆盖安装。
+val versionCodeOverride = providers.gradleProperty("versionCodeOverride").orNull?.toIntOrNull()
+val versionNameOverride = providers.gradleProperty("versionNameOverride").orNull
+
 android {
     namespace = "com.astroloop.game"
     compileSdk = 36
@@ -33,8 +37,8 @@ android {
         applicationId = "com.astroloop.game"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.5"
+        versionCode = versionCodeOverride ?: 6
+        versionName = versionNameOverride ?: "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,8 +52,8 @@ android {
         create("tuning") {
             dimension = "edition"
             applicationIdSuffix = ".tuning"
-            versionCode = 2
-            versionName = "1.5-lab.2"
+            versionCode = versionCodeOverride ?: 2
+            versionName = versionNameOverride?.let { "$it-lab" } ?: "1.5-lab.2"
             minSdk = 26
             buildConfigField("boolean", "LAB", "true")
         }
@@ -62,6 +66,8 @@ android {
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
+                // CI 的固定签名使用 PKCS12；本地 JKS 不填时保持默认。
+                storeType = keystoreProperties.getProperty("storeType", "JKS")
             }
         }
     }

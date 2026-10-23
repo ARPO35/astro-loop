@@ -1,0 +1,93 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK 36
+        run: |
+          yes | sdkmanager --licenses > /dev/null
+          sdkmanager --install "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew --no-daemon testGameDebugUnitTest
+
+      - name: Decode fixed signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 未配置，无法生成可覆盖安装的签名 APK"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/astroloop-release.p12"
+          test -s "$RUNNER_TEMP/astroloop-release.p12"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/astroloop-release.p12"
+            printf 'storeType=PKCS12\n'
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > keystore.properties
+
+      - name: Build signed release APKs
+        run: |
+          set -euo pipefail
+          VERSION_CODE=$((200 + GITHUB_RUN_NUMBER))
+          VERSION_NAME="${GITHUB_REF_NAME#v}"
+          if [ "${GITHUB_REF_TYPE}" != "tag" ]; then
+            VERSION_NAME="1.5.${GITHUB_RUN_NUMBER}"
+          fi
+          ./gradlew --no-daemon assembleGameRelease assembleTuningRelease \
+            -PversionCodeOverride="$VERSION_CODE" \
+            -PversionNameOverride="$VERSION_NAME"
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: astroloop-${{ github.ref_name }}-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/game/release/*.apk
+            app/build/outputs/apk/tuning/release/*.apk
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/build/outputs/apk/game/release/*.apk
+            app/build/outputs/apk/tuning/release/*.apk
+          generate_release_notes: true

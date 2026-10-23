@@ -48,6 +48,10 @@ Requires Android SDK 36 and JDK 17.
 # output: app/build/outputs/apk/debug/app-debug.apk
 ```
 
+Signed release APKs are built by GitHub Actions on every push to `main`; pushing a `v*` tag
+publishes them to Releases. The signing key lives in repository secrets, so successive builds
+share one signature and can update each other without losing local data.
+
 No game engine: everything is drawn as vectors on a Canvas in pure Kotlin.
 
 ## Contributing
