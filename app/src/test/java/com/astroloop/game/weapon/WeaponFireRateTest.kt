@@ -130,7 +130,7 @@ class WeaponFireRateTest {
         assertEquals(0L, w.beatPhaseOffsetMs)
     }
 
-    // ── SolarStorm: 2.0s / 40 dmg / phase 500 ──────────────────
+    // ── SolarStorm: 2.0s / 50 dmg / phase 500 ──────────────────
 
     @Test
     fun `SolarStorm baseCooldown is 2_0`() {
@@ -139,9 +139,9 @@ class WeaponFireRateTest {
     }
 
     @Test
-    fun `SolarStorm baseDamage is 40`() {
+    fun `SolarStorm baseDamage is 50`() {
         val w = SolarStorm()
-        assertEquals(40f, w.baseDamage, 0.001f)
+        assertEquals(50f, w.baseDamage, 0.001f)
     }
 
     @Test

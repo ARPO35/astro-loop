@@ -213,27 +213,27 @@ proj space_mines type=MINE dmg=60.0 life=30.0 r=12.0 pierce=false/1 len=10.0 w=1
 proj space_mines type=MINE dmg=60.0 life=30.0 r=12.0 pierce=false/1 len=10.0 w=10.0 boom=true exR=280.0 exD=60.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj space_mines type=MINE dmg=60.0 life=30.0 r=12.0 pierce=false/1 len=10.0 w=10.0 boom=true exR=280.0 exD=60.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [solar_storm L1]
-damage=40.0 cooldown=2.0 count=1 speed=0.0 area=1.0 phase=500
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+damage=50.0 cooldown=2.0 count=1 speed=0.0 area=1.0 phase=500
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [solar_storm L2]
-damage=40.0 cooldown=2.0 count=1 speed=0.0 area=1.0 phase=500
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+damage=50.0 cooldown=2.0 count=1 speed=0.0 area=1.0 phase=500
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [solar_storm L3]
-damage=40.0 cooldown=2.0 count=2 speed=0.0 area=1.0 phase=500
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+damage=50.0 cooldown=2.0 count=2 speed=0.0 area=1.0 phase=500
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [solar_storm L4]
-damage=40.0 cooldown=2.0 count=3 speed=0.0 area=1.0 phase=500
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+damage=50.0 cooldown=2.0 count=3 speed=0.0 area=1.0 phase=500
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [solar_storm L5]
-damage=40.0 cooldown=2.0 count=4 speed=0.0 area=1.0 phase=500
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
-proj solar_storm type=LIGHTNING dmg=40.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+damage=50.0 cooldown=2.0 count=4 speed=0.0 area=1.0 phase=500
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
+proj solar_storm type=LIGHTNING dmg=50.0 life=0.4 r=60.0 pierce=false/1 len=15.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [nova_blast L1]
 damage=40.0 cooldown=4.0 count=1 speed=0.0 area=1.0 phase=2000
 nova radius=180.0

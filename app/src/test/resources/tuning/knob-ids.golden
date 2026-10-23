@@ -285,7 +285,7 @@ siphon_needles.speed default=900.0 min=225.0 max=3600.0 FloatKnob LIVE "Weapons/
 siphon_needles.spread default=0.08 min=0.007999999 max=0.79999995 FloatKnob LIVE "Weapons/Siphon Needles"
 solar_storm.cooldown default=16.0 min=1.0 max=32.0 SixteenthsKnob LIVE "Weapons/Solar Storm"
 solar_storm.count default=1.0 min=1.0 max=12.0 IntKnob LIVE "Weapons/Solar Storm"
-solar_storm.damage default=40.0 min=4.0 max=400.0 FloatKnob LIVE "Weapons/Solar Storm"
+solar_storm.damage default=50.0 min=5.0 max=500.0 FloatKnob LIVE "Weapons/Solar Storm"
 space_mines.area default=1.0 min=0.25 max=4.0 FloatKnob LIVE "Weapons/Space Mines"
 space_mines.cooldown default=16.0 min=1.0 max=32.0 SixteenthsKnob LIVE "Weapons/Space Mines"
 space_mines.count default=1.0 min=1.0 max=12.0 IntKnob LIVE "Weapons/Space Mines"
