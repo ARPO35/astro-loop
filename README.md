@@ -50,6 +50,14 @@ Requires Android SDK 36 and JDK 17.
 
 No game engine: everything is drawn as vectors on a Canvas in pure Kotlin.
 
+## Contributing
+
+This repository does not accept pull requests or code contributions. The code is here so you can
+read it, build it and learn from it, or use it in your own projects under the GPL.
+
+Issues of every kind are welcome: bug reports, feature requests and ideas.
+[Open one here.](https://github.com/PubDeer/astro-loop/issues)
+
 ## License
 
 Astro Loop is free software under the GNU General Public License v3.0
