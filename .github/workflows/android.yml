@@ -80,6 +80,28 @@ jobs:
             -PversionCodeOverride="$VERSION_CODE" \
             -PversionNameOverride="$VERSION_NAME"
 
+      - name: Verify APK signatures
+        env:
+          # 公开证书指纹，不是私钥。更换签名密钥时需要同步更新。
+          EXPECTED_CERT_SHA256: "73:28:60:15:20:25:62:54:E0:5D:2A:90:94:D6:DD:AA:6F:A2:41:25:54:46:74:BD:B7:6F:A9:E4:0A:CE:B4:E6"
+        run: |
+          set -euo pipefail
+          normalize() { tr -d ':' | tr 'A-F' 'a-f'; }
+          expected="$(printf '%s' "$EXPECTED_CERT_SHA256" | normalize)"
+          sdk="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          apksigner="$(find "$sdk" -path '*/build-tools/*/apksigner' -type f | sort -V | tail -1)"
+          test -x "$apksigner"
+          for apk in app/build/outputs/apk/*/release/*.apk; do
+            echo "== $apk"
+            actual="$("$apksigner" verify --print-certs "$apk" \
+              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | normalize)"
+            echo "SHA-256: $actual"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$apk 的签名证书不是固定发布密钥"
+              exit 1
+            fi
+          done
+
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
