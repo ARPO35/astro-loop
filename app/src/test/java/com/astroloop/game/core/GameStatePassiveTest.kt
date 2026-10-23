@@ -21,17 +21,17 @@ class GameStatePassiveTest {
     // ─── Nano Repair ───────────────────────────────────────────
 
     @Test
-    fun `nano_repair adds 0_3 health regen per stack`() {
+    fun `nano_repair adds 0_6 health regen per stack`() {
         assertEquals(0f, state.healthRegen, 0.001f)
-
-        state.addPassive("nano_repair")
-        assertEquals(0.3f, state.healthRegen, 0.001f)
 
         state.addPassive("nano_repair")
         assertEquals(0.6f, state.healthRegen, 0.001f)
 
+        state.addPassive("nano_repair")
+        assertEquals(1.2f, state.healthRegen, 0.001f)
+
         repeat(3) { state.addPassive("nano_repair") }
-        assertEquals(1.5f, state.healthRegen, 0.001f)
+        assertEquals(3.0f, state.healthRegen, 0.001f)
     }
 
     // ─── Duplicator Core ───────────────────────────────────────
@@ -232,6 +232,30 @@ class GameStatePassiveTest {
         assertEquals(10f, state.revengeTimer, 0.001f)
     }
 
+    @Test
+    fun `revenge_protocol adds two one then half a shot per second per stack`() {
+        val expected = mapOf(1 to 2f, 2 to 3f, 3 to 3.5f, 4 to 4f, 5 to 4.5f)
+        for ((stacks, bonus) in expected) {
+            state.passiveStacks["revenge_protocol"] = stacks
+            assertEquals("stacks=$stacks", bonus, state.getRevengeBonusShotsPerSecond(), 0.001f)
+        }
+        state.passiveStacks.remove("revenge_protocol")
+        assertEquals(0f, state.getRevengeBonusShotsPerSecond(), 0.001f)
+    }
+
+    @Test
+    fun `revenge cooldown adds the bonus rate and respects active state`() {
+        state.passiveStacks["revenge_protocol"] = 1
+        state.revengeActive = false
+        assertEquals(0.25f, state.getRevengeCooldown(0.25f), 0.001f)
+        assertEquals(1f, state.getRevengeFireRateMultiplier(0.25f), 0.001f)
+
+        state.revengeActive = true
+        // 0.25s base = 4 shots/s, +2 shots/s = 6 shots/s = 1/6s.
+        assertEquals(1f / 6f, state.getRevengeCooldown(0.25f), 0.001f)
+        assertEquals(1.5f, state.getRevengeFireRateMultiplier(0.25f), 0.001f)
+    }
+
     // ─── Vampiric Core ─────────────────────────────────────────
 
     @Test
@@ -269,11 +293,11 @@ class GameStatePassiveTest {
 
     @Test
     fun `multiple different passives combine correctly`() {
-        state.addPassive("nano_repair")       // +0.3 regen
+        state.addPassive("nano_repair")       // +0.6 regen
         state.addPassive("duplicator_core")   // instant-max: +1 proj (binary effect)
         state.addPassive("glass_cannon")      // instant-max: +100% dmg, shields disabled
 
-        assertEquals(0.3f, state.healthRegen, 0.001f)
+        assertEquals(0.6f, state.healthRegen, 0.001f)
         assertEquals(1, state.extraProjectiles)
         assertEquals(2.00f, state.damageMultiplier, 0.001f)  // 1.0 + 1.0
         assertEquals(0f, state.maxShieldCap, 0.001f)
@@ -285,8 +309,8 @@ class GameStatePassiveTest {
     fun `passives cannot exceed max stacks`() {
         repeat(10) { state.addPassive("nano_repair") }
 
-        // Should cap at 5 stacks = 1.5 regen
-        assertEquals(1.5f, state.healthRegen, 0.001f)
+        // Should cap at 5 stacks = 3.0 regen
+        assertEquals(3.0f, state.healthRegen, 0.001f)
         assertEquals(5, state.getPassiveStacks("nano_repair"))
     }
 

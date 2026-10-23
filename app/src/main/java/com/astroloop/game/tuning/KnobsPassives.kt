@@ -6,15 +6,19 @@ import com.astroloop.game.system.VampiricLeecherSystem
 
 /**
  * Passive effects, per stack unless the label says otherwise. Stack caps are not knobs, and
- * instant-max passives stay instant-max. Revenge's fire-rate doubling is not a knob either: any
- * factor but 2 would take every weapon off the beat grid.
+ * instant-max passives stay instant-max.
  *
+ * Revenge Protocol's extra shots/sec are knobs read live by `WeaponSystem`; the beat grid uses the
+ * per-weapon cooldown recomputed from them, so the old fixed-2× restriction no longer applies.
  * Everything that feeds `GameState.recalculateStats()` applies when the editor closes, since the
  * stats are recalculated then.
  */
 object KnobsPassives {
     private val nano = KnobGroup("Passives/Nano Repair", "nano_repair")
-    val nanoRegenPerStack = nano.float("regen_per_stack", "Regen per stack (HP/s)", 0.3f, applies = Applies.ON_EDITOR_CLOSE)
+    val nanoRegenPerStack = nano.float(
+        "regen_per_stack", "Regen per stack (HP/s)", 0.6f,
+        min = 0.03f, max = 3f, applies = Applies.ON_EDITOR_CLOSE,
+    )
 
     private val duplicator = KnobGroup("Passives/Duplicator Core", "duplicator_core")
     val duplicatorExtraProjectiles = duplicator.int("extra_projectiles", "Extra projectiles", 1, min = 0, max = 10, applies = Applies.ON_EDITOR_CLOSE)
@@ -41,6 +45,13 @@ object KnobsPassives {
 
     private val revenge = KnobGroup("Passives/Revenge Protocol", "revenge_protocol")
     val revengeSecondsPerStack = revenge.float("seconds_per_stack", "Burst seconds per stack", 2f)
+    /**
+     * 每层额外射速（发/秒）。Revenge 按叠层加算，而不是乘一个固定倍率：
+     * 1 层 +2，2 层再 +1，3 层及以后每层 +0.5。
+     */
+    val revengeBonusShotsStack1 = revenge.float("bonus_shots_1", "Extra shots/s at 1 stack", 2f, min = 0f, max = 20f)
+    val revengeBonusShotsStack2 = revenge.float("bonus_shots_2", "Extra shots/s at 2 stacks", 1f, min = 0f, max = 20f)
+    val revengeBonusShotsAfter = revenge.float("bonus_shots_after", "Extra shots/s per stack after 2", 0.5f, min = 0f, max = 20f)
 
     private val vampiric = KnobGroup("Passives/Vampiric Core", "vampiric_core")
     // 1.5: `leech_per_stack` and the flat `range` became a flat leech and a range that grows per stack.

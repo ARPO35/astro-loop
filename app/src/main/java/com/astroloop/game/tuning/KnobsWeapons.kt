@@ -11,7 +11,7 @@ import kotlin.math.PI
 object KnobsWeapons {
 
     // ── Base weapons ────────────────────────────────────────────────────────────────────────────
-    val pulseCannon = WeaponKnobs.base("pulse_cannon", "Pulse Cannon", damage = 15f, sixteenths = 4, count = 1, speed = 600f)
+    val pulseCannon = WeaponKnobs.base("pulse_cannon", "Pulse Cannon", damage = 15f, sixteenths = 2, count = 1, speed = 600f)
     val energySaw = WeaponKnobs.ticking("energy_saw", "Energy Saw", damage = 8f, tickMs = 100)
     val scatterShot = WeaponKnobs.base("scatter_shot", "Scatter Shot", damage = 14f, sixteenths = 8, count = 8, speed = 500f, hasArea = true)
     val homingMissiles = WeaponKnobs.base("homing_missiles", "Homing Missiles", damage = 35f, sixteenths = 8, count = 1, speed = 350f)

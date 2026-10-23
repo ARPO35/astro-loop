@@ -14,7 +14,7 @@ object PassiveDefinitions {
             id = "nano_repair",
             name = "Nano Repair",
             description = "Regenerates health over time",
-            effectPerStack = "+0.3 HP/sec"
+            effectPerStack = "+0.6 HP/sec"
         ),
         PassiveDef(
             id = "duplicator_core",
@@ -74,7 +74,7 @@ object PassiveDefinitions {
             id = "revenge_protocol",
             name = "Revenge Protocol",
             description = "Retaliatory fire rate burst",
-            effectPerStack = "2× fire rate\non hit"
+            effectPerStack = "+2/+1/+0.5 shots/s\non hit"
         ),
         PassiveDef(
             id = "vampiric_core",

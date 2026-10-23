@@ -31,11 +31,16 @@ class WeaponSystem(
         targets: List<Entity>,
         asteroids: List<Asteroid> = emptyList()
     ) {
-        // Update all weapon cooldowns (Revenge Protocol: 2x fire rate = 2x delta while active)
+        // Update all weapon cooldowns. Revenge Protocol adds flat shots/sec per stack, so each
+        // weapon's countdown is scaled by its own rate multiplier (base cooldown differs).
         activeWeapons.values.forEach { weapon ->
             val isSaw = weapon.id == "energy_saw" || weapon.id == "warp_saw" || weapon.id == "oblivion_beam"
-            val effectiveDelta = if (state.revengeActive && !isSaw) deltaTime * 2f else deltaTime
-            weapon.update(effectiveDelta)
+            // Orbiters are contact damage and their own update doubles their speed; their cooldown
+            // only paces respawn maintenance, so it must not inherit the per-shot bonus.
+            val isOrbiter = weapon.id == "ion_orbiters" || weapon.id == "frost_ring"
+            val rateMultiplier = if (isSaw || isOrbiter) 1f
+                else state.getRevengeFireRateMultiplier(weapon.getCooldown(state))
+            weapon.update(deltaTime * rateMultiplier)
         }
 
         // Update orbiters, attached beam positions, and pending mines
@@ -61,9 +66,11 @@ class WeaponSystem(
                 val isOrbiter = weapon.id == "ion_orbiters" || weapon.id == "frost_ring"
                 val onGrid = !isSaw && !isOrbiter && SoundManager.beatClock.isRunning
 
-                // Timers count down at 2x during Revenge, so a real-time delay is doubled to
-                // land on the real-time grid.
-                val timerScale = if (state.revengeActive && !isSaw) 2f else 1f
+                // Countdowns are scaled by the per-weapon Revenge rate multiplier, so a
+                // real-time delay is multiplied by the same factor to land on its grid.
+                val baseCooldown = weapon.getCooldown(state)
+                val timerScale =
+                    if (isSaw) 1f else state.getRevengeFireRateMultiplier(baseCooldown)
 
                 if (onGrid && !weapon.beatSynced) {
                     // First shot: wait for the next tick of this weapon's grid.
@@ -101,7 +108,7 @@ class WeaponSystem(
     }
 
     private fun gridSubdivisionUs(weapon: Weapon, state: GameState): Long {
-        val seconds = if (state.revengeActive) weapon.getCooldown(state) / 2f else weapon.getCooldown(state)
+        val seconds = state.getRevengeCooldown(weapon.getCooldown(state))
         return BeatClock.cooldownToSubdivisionUs(seconds)
     }
 

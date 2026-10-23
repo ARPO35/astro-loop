@@ -15,7 +15,11 @@ class PassiveKnobsTest {
     @Test
     fun `defaults are the shipped values the golden cannot see`() {
         with(KnobsPassives) {
+            assertEquals(0.6f, nanoRegenPerStack.value)
             assertEquals(2f, revengeSecondsPerStack.value)
+            assertEquals(2f, revengeBonusShotsStack1.value)
+            assertEquals(1f, revengeBonusShotsStack2.value)
+            assertEquals(0.5f, revengeBonusShotsAfter.value)
             assertEquals(0.2f, vampiricTick.value)
             assertEquals(6, vampiricMaxTargets.value)
             assertEquals(8f, droneDamage.value)

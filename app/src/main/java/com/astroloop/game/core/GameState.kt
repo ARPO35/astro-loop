@@ -671,6 +671,38 @@ class GameState {
 
     fun getPassiveStacks(passiveId: String): Int = passiveStacks[passiveId] ?: 0
 
+    /**
+     * Revenge Protocol 当前叠层提供的额外射速（发/秒）。
+     * 1 层 +2，2 层再 +1，3 层及以后每层 +0.5；没有叠层时为 0。
+     */
+    fun getRevengeBonusShotsPerSecond(): Float {
+        val stacks = getPassiveStacks("revenge_protocol")
+        if (stacks <= 0) return 0f
+        return if (stacks == 1) {
+            KnobsPassives.revengeBonusShotsStack1.value
+        } else {
+            KnobsPassives.revengeBonusShotsStack1.value +
+                KnobsPassives.revengeBonusShotsStack2.value +
+                KnobsPassives.revengeBonusShotsAfter.value * (stacks - 2)
+        }
+    }
+
+    /** Revenge 生效时，把基础冷却换算成“基础射速 + 额外射速”对应的冷却。 */
+    fun getRevengeCooldown(baseCooldown: Float): Float {
+        if (!revengeActive || baseCooldown <= 0f) return baseCooldown
+        val bonus = getRevengeBonusShotsPerSecond()
+        if (bonus <= 0f) return baseCooldown
+        return 1f / (1f / baseCooldown + bonus)
+    }
+
+    /** Revenge 生效时，基础冷却对应的射速倍率（用于把计时器按同一比例加速）。 */
+    fun getRevengeFireRateMultiplier(baseCooldown: Float): Float {
+        if (!revengeActive || baseCooldown <= 0f) return 1f
+        val bonus = getRevengeBonusShotsPerSecond()
+        if (bonus <= 0f) return 1f
+        return 1f + bonus * baseCooldown
+    }
+
     fun recalculateStats() {
         // Reset to base
         damageMultiplier = 1f

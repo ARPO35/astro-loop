@@ -81,7 +81,11 @@ class KnobSystemsSweepTest {
             it.screenWidth = 1080f; it.screenHeight = 1920f
             for (p in listOf("vampiric_core", "cryo_field", "tb26", "momentum_drive")) it.passiveStacks[p] = 5
             it.recalculateStats()
-            if (evolved) { it.droneEvolved = true; it.revengeActive = true }
+            if (evolved) {
+                it.droneEvolved = true
+                it.revengeActive = true
+                it.passiveStacks["revenge_protocol"] = 5
+            }
         }
         val ship = Ship()
         val asteroids = field()

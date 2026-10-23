@@ -3,17 +3,18 @@ package com.astroloop.game.data
 /**
  * The Black Market slot machine's odds and payouts.
  *
- * Extracted out of `HangarSurfaceView` so the house edge is a number a test can pin rather than a
- * property of a `when` block nobody had added up. It had never been added up: the five cash tiers
- * alone returned 99 yen per 100 spent, and the jackpot pushed the machine 49% to 150% in the
- * player's favour depending on how expensive their next store upgrade happened to be. With
- * hold-to-spin, that is a printing press.
+ * Extracted out of `HangarSurfaceView` so the payout table is a number a test can pin rather than
+ * a property of a `when` block nobody had added up.
  *
- * The fix is not a flat rate. The jackpot's prize is a store upgrade whose cash value runs from
- * 1,000 to 50,000, so any fixed probability produces a wildly different edge at different points in
- * a save. Instead the jackpot slot is given a fixed **budget** — the yen it is allowed to return per
- * spin — and its probability is derived from whatever it is currently able to give away. A cheap
- * upgrade comes up often; the 50,000 one almost never. The edge does not move.
+ * The jackpot's prize is a store upgrade whose cash value runs from 1,000 to 50,000, so any fixed
+ * probability produces a wildly different edge at different points in a save. Instead the jackpot
+ * slot is given a fixed **budget** — the yen it is allowed to return per spin — and its probability
+ * is derived from whatever it is currently able to give away. A cheap upgrade comes up often; the
+ * 50,000 one almost never. The jackpot's contribution does not move.
+ *
+ * The 50/100/300/500/2000 ladder is intentionally generous: with the bands below it returns 151
+ * yen per 100 honest spin (241 rigged), up from the old 95/160 table. The bands are the lever if a
+ * house edge is wanted back.
  */
 object SlotOdds {
 
@@ -36,11 +37,11 @@ object SlotOdds {
 
     /** Probability band width and payout for each cash symbol, jackpot excluded. Diamond first. */
     val CASH_TIERS: List<Pair<Float, Int>> = listOf(
-        0.02f to 750,   // diamond — honest machine; rigged widens this band, see diamondThreshold
-        0.06f to 300,   // star
-        0.06f to 100,   // yen
-        0.08f to 50,    // bolt
-        0.10f to 20,    // wrench
+        0.02f to 2000,  // diamond — honest machine; rigged widens this band, see diamondThreshold
+        0.06f to 500,   // star
+        0.06f to 300,   // yen
+        0.08f to 100,   // bolt
+        0.10f to 50,    // wrench
     )
 
     private const val DIAMOND_BAND_RIGGED = 0.04f
@@ -60,7 +61,12 @@ object SlotOdds {
         return (budget / prizeValue.toFloat()).coerceIn(0f, 1f)
     }
 
-    /** Expected yen returned per [SPIN_COST] spin. 95 is a 5% house edge. */
+    /**
+     * Expected yen returned per [SPIN_COST] spin with the 50/100/300/500/2000 ladder and the
+     * existing bands: 151 honest, 241 rigged. The ladder is deliberately more generous than the
+     * old 95/160 table; changing the bands or the jackpot budget is the lever that restores a
+     * house edge.
+     */
     fun expectedReturn(prizeValue: Int, rigged: Boolean): Float {
         val jackpot = jackpotThreshold(prizeValue, rigged) * prizeValue
         val diamond = diamondThreshold(rigged) * CASH_TIERS[0].second

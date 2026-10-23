@@ -27,7 +27,11 @@ class WeaponGridDriftTest {
     private fun fireTimes(weaponId: String, seconds: Int, revenge: Boolean = false): List<Double> {
         val pool = EntityPool({ Projectile() }, 64)
         val system = WeaponSystem(pool)
-        val state = GameState().also { it.reset(); it.revengeActive = revenge }
+        val state = GameState().also {
+            it.reset()
+            it.revengeActive = revenge
+            if (revenge) it.passiveStacks["revenge_protocol"] = 1
+        }
         val ship = Ship()
         var nowMs = 0.0
         system.nowMs = { nowMs.toLong() }
@@ -63,10 +67,10 @@ class WeaponGridDriftTest {
     }
 
     @Test
-    fun `pulse cannon stays on its half-beat grid for a minute`() {
+    fun `pulse cannon stays on its quarter-beat grid for a minute`() {
         val t = fireTimes("pulse_cannon", 60)
-        assertOnGrid("pulse", t, 500.0, 0.0)
-        assertRate("pulse", t, 500.0, 60)
+        assertOnGrid("pulse", t, 250.0, 0.0)
+        assertRate("pulse", t, 250.0, 60)
     }
 
     @Test
@@ -85,10 +89,11 @@ class WeaponGridDriftTest {
     }
 
     @Test
-    fun `revenge halves the interval and stays on the halved grid`() {
+    fun `revenge adds its per-stack rate and stays on the resulting grid`() {
+        // Pulse base 0.25s = 4 shots/s; one stack adds 2 shots/s => 1/6s interval.
         val t = fireTimes("pulse_cannon", 30, revenge = true)
-        assertOnGrid("pulse revenge", t, 250.0, 0.0)
-        assertRate("pulse revenge", t, 250.0, 30)
+        assertOnGrid("pulse revenge", t, 1000.0 / 6.0, 0.0)
+        assertRate("pulse revenge", t, 1000.0 / 6.0, 30)
     }
 
     @Test

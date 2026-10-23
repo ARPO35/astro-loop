@@ -1,23 +1,23 @@
 [pulse_cannon L1]
-damage=15.0 cooldown=0.5 count=1 speed=600.0 area=1.0 phase=0
+damage=15.0 cooldown=0.25 count=1 speed=600.0 area=1.0 phase=0
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [pulse_cannon L2]
-damage=15.0 cooldown=0.5 count=2 speed=600.0 area=1.0 phase=0
+damage=15.0 cooldown=0.25 count=2 speed=600.0 area=1.0 phase=0
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [pulse_cannon L3]
-damage=15.0 cooldown=0.5 count=3 speed=600.0 area=1.0 phase=0
+damage=15.0 cooldown=0.25 count=3 speed=600.0 area=1.0 phase=0
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [pulse_cannon L4]
-damage=15.0 cooldown=0.5 count=4 speed=600.0 area=1.0 phase=0
+damage=15.0 cooldown=0.25 count=4 speed=600.0 area=1.0 phase=0
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [pulse_cannon L5]
-damage=15.0 cooldown=0.5 count=5 speed=600.0 area=1.0 phase=0
+damage=15.0 cooldown=0.25 count=5 speed=600.0 area=1.0 phase=0
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj pulse_cannon type=BULLET dmg=15.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
@@ -360,30 +360,30 @@ proj flak_cannon type=FLAK dmg=44.0 life=1.5 r=6.0 pierce=false/1 len=8.0 w=4.0 
 proj flak_cannon type=FLAK dmg=44.0 life=1.5 r=6.0 pierce=false/1 len=8.0 w=4.0 boom=true exR=85.0 exD=30.8 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=true
 proj flak_cannon type=FLAK dmg=44.0 life=1.5 r=6.0 pierce=false/1 len=8.0 w=4.0 boom=true exR=85.0 exD=30.8 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=true
 [storm_cannon L1]
-damage=18.0 cooldown=0.25 count=3 speed=700.0 area=1.0 phase=0
+damage=18.0 cooldown=0.125 count=3 speed=700.0 area=1.0 phase=0
 proj storm_cannon type=BULLET dmg=18.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=18.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=18.0 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [storm_cannon L2]
-damage=23.4 cooldown=0.25 count=3 speed=700.0 area=1.0 phase=0
+damage=23.4 cooldown=0.125 count=3 speed=700.0 area=1.0 phase=0
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [storm_cannon L3]
-damage=23.4 cooldown=0.25 count=4 speed=700.0 area=1.0 phase=0
+damage=23.4 cooldown=0.125 count=4 speed=700.0 area=1.0 phase=0
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=23.4 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [storm_cannon L4]
-damage=27.9 cooldown=0.25 count=5 speed=700.0 area=1.0 phase=0
+damage=27.9 cooldown=0.125 count=5 speed=700.0 area=1.0 phase=0
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 [storm_cannon L5]
-damage=27.9 cooldown=0.25 count=6 speed=700.0 area=1.0 phase=0
+damage=27.9 cooldown=0.125 count=6 speed=700.0 area=1.0 phase=0
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
 proj storm_cannon type=BULLET dmg=27.9 life=2.0 r=4.0 pierce=false/1 len=8.0 w=2.0 boom=false exR=0.0 exD=0.0 bomblets=0 bD=0.0 bR=0.0 frag=false/0.0 homing=0.0 orbitR=0.0 visualOnly=false fuse=false
