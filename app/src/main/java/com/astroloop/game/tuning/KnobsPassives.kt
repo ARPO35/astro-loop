@@ -55,7 +55,10 @@ object KnobsPassives {
 
     private val vampiric = KnobGroup("Passives/Vampiric Core", "vampiric_core")
     // 1.5: `leech_per_stack` and the flat `range` became a flat leech and a range that grows per stack.
-    val vampiricLeech = vampiric.float("leech", "Leech per asteroid per tick (HP)", VampiricLeecherSystem.LEECH)
+    val vampiricLeech = vampiric.float(
+        "leech", "Leech per asteroid per tick (HP)", VampiricLeecherSystem.LEECH,
+        min = 0.02f, max = 2f
+    )
     val vampiricTick = vampiric.float("tick", "Tick (s)", VampiricLeecherSystem.TICK_INTERVAL)
     val vampiricBaseRange = vampiric.float("base_range", "Range at 1 stack (from asteroid edge)", VampiricLeecherSystem.BASE_RANGE)
     val vampiricRangePerStack = vampiric.float("range_per_stack", "Range + per stack", VampiricLeecherSystem.RANGE_PER_STACK, min = 0f, max = 200f)
@@ -64,7 +67,10 @@ object KnobsPassives {
     private val glass = KnobGroup("Passives/Glass Cannon", "glass_cannon")
     // Additive bonus: 3.0 on top of the base 1.0 = 4x total damage. Doubled from 1.0 (2x) on the
     // owner's 2026-10-25 request.
-    val glassDamageBonus = glass.float("damage_bonus", "Damage +", 3f, applies = Applies.ON_EDITOR_CLOSE)
+    val glassDamageBonus = glass.float(
+        "damage_bonus", "Damage +", 3f,
+        min = 0.1f, max = 10f, applies = Applies.ON_EDITOR_CLOSE
+    )
 
     private val drone = KnobGroup("Passives/Combat Drone", "drone")
     val droneDamage = drone.float("damage", "Bullet damage", 8f)
