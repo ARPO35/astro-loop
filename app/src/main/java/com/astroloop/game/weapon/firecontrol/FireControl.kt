@@ -131,6 +131,8 @@ class FireControl {
         val picked = ArrayList<Entity>(count)
         repeat(count) {
             val candidate = pickBest(allowedSet) ?: return@repeat
+            // 瞬间武器每个目标只打一次；目标不足时就是少打几个，不重复命中同一目标。
+            allowedSet.remove(candidate.target)
             val lane = assigned[candidate.target] ?: 0
             assigned[candidate.target] = lane + 1
             picked.add(candidate.target)
