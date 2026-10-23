@@ -12,16 +12,19 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.sqrt
 
 /**
  * 一帧内共享的火控系统：威胁排序、目标分配和提前量瞄准。
  *
  * 设计要点：
- * - [beginFrame] 每帧调用一次，按当前目标重新计算威胁；同一帧内各武器通过 [allocate]
- *   共享分配计数，避免多枚导弹同时扑向同一个目标。
- * - 单发武器使用 [aimAngle]，只取威胁最高的目标，不占用分配额度；多目标武器使用
- *   [allocate] 或 [selectTargets] 获得一组互不重复（目标不足时按份额均摊）的目标。
+ * - [beginFrame] 每帧调用一次，按当前目标重新计算威胁；同一帧内各武器通过 [aimAngle]、
+ *   [allocate] 和 [selectTargets] 共享分配计数，避免所有火力同时扑向同一个目标。
+ * - 单发武器也通过 [aimAngle] 占用分配额度；多目标武器使用 [allocate] 或 [selectTargets]
+ *   获得一组互不重复（目标不足时按份额均摊）的目标。
+ * - 敌机/Boss 的权重会随“上次受伤后的时间”恢复：武器充足时部分火力可以分给小行星，
+ *   武器不足时敌机重新回到高优先级。
  * - 同一目标被分配多枚弹丸时，瞄准点会沿视线垂直方向错开，形成不同弹道，而不是重叠。
  *
  * 只由玩家的 `WeaponSystem` 使用；敌机、舰队和僚机保持原版武器逻辑。
@@ -42,23 +45,40 @@ class FireControl {
 
     private val ranked = ArrayList<RankedTarget>()
     private val assigned = HashMap<Entity, Int>()
+
+    /** 上一帧看到的敌机/Boss 生命值，用于检测“这一帧实际掉了血”。 */
+    private val lastHealth = HashMap<Entity, Float>()
+    /** 最近一次观察到生命值下降的时间；没有记录表示从未受伤。 */
+    private val lastDamagedAt = HashMap<Entity, Float>()
     private var ready = false
 
     /** 同一目标连续被选中的分数衰减系数；越大越倾向于把火力分散到其他目标。 */
     private val sharePenalty = 1.5f
 
-    /** 每帧开始时重算威胁排序并清空分配记录。 */
+    /**
+     * 每帧开始时重算威胁排序并清空分配记录。
+     *
+     * [nowSeconds] 是游戏内时间，用于计算敌机距离上次受伤已经多久；生产环境由
+     * `WeaponSystem` 传入 `GameState.survivalTime`。
+     */
     fun beginFrame(
         targets: List<Entity>,
         origin: Vector2,
         facing: Float = 0f,
         playerVelocity: Vector2? = null,
+        nowSeconds: Float = 0f,
     ) {
         ranked.clear()
         assigned.clear()
+        trackDamage(targets, nowSeconds)
         for (target in targets) {
             if (target.isActive) {
-                ranked.add(RankedTarget(target, threatOf(target, origin, facing, playerVelocity)))
+                ranked.add(
+                    RankedTarget(
+                        target,
+                        threatOf(target, origin, facing, playerVelocity, nowSeconds),
+                    )
+                )
             }
         }
         ranked.sortWith(
@@ -72,13 +92,21 @@ class FireControl {
     fun rankedTargets(): List<RankedTarget> = ranked.toList()
 
     /**
-     * 单发瞄准：选威胁最高的目标，返回带提前量的世界角度。
+     * 单发瞄准：按共享分配选当前分数最高的目标，返回带提前量的世界角度。
      * 没有可用目标时返回 [Float.NaN]，调用方应退回自己的朝向。
+     *
+     * 单发武器也占用一次分配额度。多个单发武器在同一帧开火时，后面的武器会避开已经分到
+     * 火力的目标，避免“武器很多但全部打同一个敌机/小行星”。
      */
     fun aimAngle(firer: Firer, targets: List<Entity>, projectileSpeed: Float, maxTime: Float = 8f): Float {
         ensureFrame(targets, firer.position, firer.rotation, firer.velocity)
-        val target = ranked.firstOrNull()?.target ?: return Float.NaN
-        return aimAngleAt(firer, target, projectileSpeed, maxTime)
+        val candidate = pickBest(null) ?: return Float.NaN
+        val angle = aimAngleAt(firer, candidate.target, projectileSpeed, maxTime)
+        if (!angle.isNaN()) {
+            val lane = assigned[candidate.target] ?: 0
+            assigned[candidate.target] = lane + 1
+        }
+        return angle
     }
 
     /** 第二目标的角度，用于 Railgun 尾射等需要另一条射线的武器。 */
@@ -230,6 +258,62 @@ class FireControl {
         return sign * ring
     }
 
+    /**
+     * 逐帧比较敌机/Boss 的生命值，记录最近一次实际掉血的时间。
+     *
+     * 只在 [beginFrame] 里做差，不侵入所有伤害调用点：护盾吸收、闪避、无敌等没有掉血的事件
+     * 不会被误算成受伤；对象池重置导致生命值回升时会清除记录，避免旧数据污染新目标。
+     */
+    private fun trackDamage(targets: List<Entity>, nowSeconds: Float) {
+        val seen = HashSet<Entity>(targets.size)
+        for (target in targets) {
+            if (!target.isActive) continue
+            seen.add(target)
+            if (target !is EnemyShip && target !is Boss) continue
+
+            val previous = lastHealth[target]
+            val current = target.health
+            when {
+                previous == null -> {
+                    // 第一次看到就已经带伤，说明它在本火控接管前受过伤。
+                    if (current < target.maxHealth - HEALTH_EPSILON) {
+                        lastDamagedAt[target] = nowSeconds
+                    }
+                }
+                current < previous - HEALTH_EPSILON -> {
+                    lastDamagedAt[target] = nowSeconds
+                }
+                current > previous + HEALTH_EPSILON -> {
+                    // 治疗或对象池重置：新的一轮，不再沿用旧伤时间。
+                    lastDamagedAt.remove(target)
+                }
+            }
+            lastHealth[target] = current
+        }
+        lastHealth.keys.retainAll(seen)
+        lastDamagedAt.keys.retainAll(seen)
+    }
+
+    /**
+     * 敌机/Boss 的火力集中系数：刚受伤时降到 [ENEMY_FOCUS_MIN]，随时间指数恢复到
+     * [ENEMY_FOCUS_MAX]。从未受伤的目标直接取上限。
+     *
+     * 武器多 → 命中间隔短 → 系数低 → 多余火力可以分给小行星；武器少 → 命中间隔长 →
+     * 系数恢复 → 火力重新集中在敌机。Boss 的基础类型权重更高，因此同等受伤时间内仍压过
+     * 普通敌机。
+     */
+    private fun focusFor(entity: Entity, nowSeconds: Float): Float {
+        if (entity !is EnemyShip && entity !is Boss) return 1f
+        val damagedAt = lastDamagedAt[entity]
+        val age = if (damagedAt == null) {
+            Float.POSITIVE_INFINITY
+        } else {
+            (nowSeconds - damagedAt).coerceAtLeast(0f)
+        }
+        val recovery = 1f - exp((-age / ENEMY_FOCUS_RAMP_SECONDS).toDouble()).toFloat()
+        return ENEMY_FOCUS_MIN + (ENEMY_FOCUS_MAX - ENEMY_FOCUS_MIN) * recovery
+    }
+
     private fun ensureFrame(
         targets: List<Entity>,
         origin: Vector2,
@@ -244,7 +328,9 @@ class FireControl {
      *
      * - 撞击时间用目标与玩家的相对速度求最小正根；不在碰撞航线上时退化为最近接近时间。
      * - 本机转向：目标偏离船头越远，附加的转向时间越长，威胁越低。
-     * - 距离和朝向只做次级修正；敌机类型权重高于小行星，Boss 高于普通敌机。
+     * - 距离权重高于旧版：越近的目标分数越高，近处敌人尤其明显。
+     * - 敌机/Boss 还乘以“距离上次受伤的时间”恢复系数：刚受伤时降权，长时间未受伤时
+     *   回到高优先级。武器多、命中密集时，多余火力会自然分给小行星。
      * - 跃迁中/出生护盾/Boss 无敌等暂时不可伤害状态继续降权。
      */
     fun threatOf(
@@ -252,6 +338,7 @@ class FireControl {
         origin: Vector2,
         facing: Float = 0f,
         playerVelocity: Vector2? = null,
+        nowSeconds: Float = 0f,
     ): Float {
         val dx = entity.position.x - origin.x
         val dy = entity.position.y - origin.y
@@ -264,7 +351,7 @@ class FireControl {
         val impactTime = timeToImpact(entity, origin, playerVelocity)
         val urgency = 1f / (impactTime + turnPenalty + URGENCY_PADDING)
 
-        val proximity = 1f + 250f / (distance + 250f)
+        val proximity = 1f + DISTANCE_WEIGHT / (distance + DISTANCE_FALLOFF)
         val facingWeight = 0.75f + 0.25f * cos(angleOffset)
         val typeWeight = when (entity) {
             is Boss -> 2f
@@ -286,7 +373,7 @@ class FireControl {
             else -> 1f
         }
 
-        return urgency * proximity * facingWeight * typeWeight * status
+        return urgency * proximity * facingWeight * typeWeight * status * focusFor(entity, nowSeconds)
     }
 
     /**
@@ -342,5 +429,19 @@ class FireControl {
         private const val TURN_PENALTY_SECONDS = 0.8f
         /** 防止撞击时间为 0 时威胁分无限大。 */
         private const val URGENCY_PADDING = 0.35f
+
+        /** 距离权重：越大，近处目标越优先。旧版为 250。 */
+        private const val DISTANCE_WEIGHT = 400f
+        /** 距离衰减基准：越大，远近差距越平缓。旧版为 250。 */
+        private const val DISTANCE_FALLOFF = 200f
+
+        /** 敌机刚受伤时的火力集中系数；低于小行星，允许分火。 */
+        private const val ENEMY_FOCUS_MIN = 0.55f
+        /** 敌机长时间未受伤时的火力集中系数；保持“敌机最高优先级”。 */
+        private const val ENEMY_FOCUS_MAX = 3f
+        /** 从刚受伤恢复到满权重的指数时间常数（秒）。 */
+        private const val ENEMY_FOCUS_RAMP_SECONDS = 1.2f
+        /** 生命值变化小于该值视为抖动，不刷新受伤时间。 */
+        private const val HEALTH_EPSILON = 0.01f
     }
 }

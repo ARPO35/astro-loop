@@ -96,6 +96,66 @@ class FireControlTest {
     }
 
     @Test
+    fun `同等条件下更近的敌机优先`() {
+        val near = enemy(EnemyType.SCOUT, 150f)
+        val far = enemy(EnemyType.SCOUT, 600f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(far, near), Vector2())
+
+        assertEquals(near, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `未受伤的敌机仍优先于更近的小行星`() {
+        val farEnemy = enemy(EnemyType.SCOUT, 500f)
+        val closeRock = Asteroid().also {
+            it.initialize(100f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+
+        val control = FireControl()
+        control.beginFrame(listOf(closeRock, farEnemy), Vector2())
+
+        assertEquals(farEnemy, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `刚受伤的敌机会暂时让位给小行星`() {
+        val enemy = enemy(EnemyType.SCOUT, 300f)
+        val rock = Asteroid().also {
+            it.initialize(250f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+        val control = FireControl()
+
+        control.beginFrame(listOf(enemy, rock), Vector2(), nowSeconds = 0f)
+        assertEquals(enemy, control.rankedTargets().first().target)
+
+        enemy.takeDamage(10f)
+        control.beginFrame(listOf(enemy, rock), Vector2(), nowSeconds = 0.01f)
+        assertEquals(rock, control.rankedTargets().first().target)
+
+        control.beginFrame(listOf(enemy, rock), Vector2(), nowSeconds = 2f)
+        assertEquals(enemy, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `敌机刚受伤时多发武器会分出火力打小行星`() {
+        val enemy = enemy(EnemyType.SCOUT, 300f)
+        val rock = Asteroid().also {
+            it.initialize(250f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+        val control = FireControl()
+        control.beginFrame(listOf(enemy, rock), Vector2(), nowSeconds = 0f)
+        enemy.takeDamage(10f)
+        control.beginFrame(listOf(enemy, rock), Vector2(), nowSeconds = 0.01f)
+
+        val locks = control.allocate(firer(), listOf(enemy, rock), 3, 500f, 5f)
+
+        assertTrue("至少一发拦截小行星", locks.any { it.target is Asteroid })
+        assertTrue("至少一发继续打敌机", locks.any { it.target is EnemyShip })
+    }
+
+    @Test
     fun `同一条件下敌机权重高于小行星`() {
         val shipTarget = enemy(EnemyType.SCOUT, 200f)
         val rock = Asteroid().also {
@@ -169,6 +229,19 @@ class FireControlTest {
         assertEquals(5, locks.size)
         assertEquals(3, counts.size)
         assertTrue("单目标分到 ${counts.values}", counts.values.maxOrNull()!! <= 2)
+    }
+
+    @Test
+    fun `同一帧内多门单发武器会避开已分配目标`() {
+        val left = enemy(EnemyType.SCOUT, 300f, y = -100f)
+        val right = enemy(EnemyType.SCOUT, 300f, y = 100f)
+        val control = FireControl()
+        control.beginFrame(listOf(left, right), Vector2())
+
+        val first = control.aimAngle(firer(), listOf(left, right), 500f)
+        val second = control.aimAngle(firer(), listOf(left, right), 500f)
+
+        assertTrue("两门单发武器仍打同一目标", abs(first - second) > 0.1f)
     }
 
     @Test
