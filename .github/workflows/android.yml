@@ -93,8 +93,15 @@ jobs:
           test -x "$apksigner"
           for apk in app/build/outputs/apk/*/release/*.apk; do
             echo "== $apk"
-            actual="$("$apksigner" verify --print-certs "$apk" \
-              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | normalize)"
+            # apksigner 的证书信息可能写到 stderr，统一捕获后再解析。
+            output="$("$apksigner" verify --print-certs "$apk" 2>&1)" || {
+              echo "$output"
+              echo "::error::$apk 的签名校验失败"
+              exit 1
+            }
+            echo "$output"
+            actual="$(printf '%s\n' "$output" \
+              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | normalize)"
             echo "SHA-256: $actual"
             if [ "$actual" != "$expected" ]; then
               echo "::error::$apk 的签名证书不是固定发布密钥"
