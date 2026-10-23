@@ -52,7 +52,7 @@
 
 所有沿方向发射弹丸的武器都改为先取火控瞄准角，再叠加原有扇形/锥形/抖动：
 
-- Pulse Cannon、Storm Cannon 的直线弹（Storm Cannon 本身是全向螺旋，只保留原弹道）
+- Pulse Cannon 的直线弹（Storm Cannon 是全向螺旋，没有单一瞄准方向，保留原弹道）
 - Homing Missiles、Autonomous Ace、Hunter-Killer
 - Scatter Shot、Leech Burst、Needle Gun、Siphon Needles
 - Cluster Bomb、Flak Cannon、Flak Barrage、Railgun

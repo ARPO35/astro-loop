@@ -31,6 +31,8 @@ Android SDK / JDK。
    - 运行 `testGameDebugUnitTest`；
    - 解码密钥、生成临时 `keystore.properties`；
    - 构建 `assembleGameRelease` 和 `assembleTuningRelease`；
+   - 用 `apksigner` 校验两个 APK 的证书 SHA-256 是否等于固定发布证书（公开指纹写在
+     workflow 中），否则构建失败；
    - 上传 APK artifact；
    - 标签构建创建 GitHub Release。
 
