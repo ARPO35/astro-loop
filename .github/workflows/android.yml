@@ -100,13 +100,20 @@ jobs:
               exit 1
             }
             echo "$output"
-            actual="$(printf '%s\n' "$output" \
-              | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | normalize)"
-            echo "SHA-256: $actual"
-            if [ "$actual" != "$expected" ]; then
-              echo "::error::$apk 的签名证书不是固定发布密钥"
+            # 不同 apksigner 版本的前缀不同：V2 Signer 或 Signer #1。
+            digests="$(printf '%s\n' "$output" \
+              | sed -n 's/^.*certificate SHA-256 digest: //p' | normalize)"
+            echo "SHA-256: $digests"
+            if [ -z "$digests" ]; then
+              echo "::error::$apk 找不到 SHA-256 证书指纹"
               exit 1
             fi
+            while IFS= read -r digest; do
+              if [ "$digest" != "$expected" ]; then
+                echo "::error::$apk 的签名证书不是固定发布密钥"
+                exit 1
+              fi
+            done <<< "$digests"
           done
 
       - name: Upload APKs
