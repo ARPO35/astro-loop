@@ -29,10 +29,13 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # 交给下一步显式接受；action 内置的 sdkmanager 版本会卡在交互提示。
+          accept-android-sdk-licenses: false
 
       - name: Install SDK 36
         run: |
-          yes | sdkmanager --licenses > /dev/null
+          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager --install "platforms;android-36" "build-tools;35.0.0"
 
       - name: Set up Gradle
