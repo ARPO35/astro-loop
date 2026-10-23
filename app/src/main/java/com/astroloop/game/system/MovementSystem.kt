@@ -78,6 +78,41 @@ class MovementSystem {
         }
     }
 
+    /**
+     * 玩家制导武器丢失目标后改追最近的有效目标（[targets] 由调用方给出敌机/小行星/Boss）。
+     * 敌机、舰队和僚机的弹丸不参与，保持原版直线/旧目标行为。
+     */
+    fun retargetHomingProjectiles(
+        projectiles: List<Projectile>,
+        targets: List<Entity>,
+    ) {
+        for (projectile in projectiles) {
+            if (!projectile.isActive || !projectile.playerGuidance) continue
+            if (projectile.homingStrength <= 0f) continue
+            if (projectile.type != ProjectileType.MISSILE && projectile.type != ProjectileType.TORPEDO) continue
+
+            val current = projectile.target
+            if (current != null && current.isActive &&
+                !(current is EnemyShip && current.isWarping)
+            ) {
+                continue
+            }
+
+            var best: Entity? = null
+            var bestDistance = Float.MAX_VALUE
+            for (candidate in targets) {
+                if (!candidate.isActive) continue
+                if (candidate is EnemyShip && candidate.isWarping) continue
+                val distance = projectile.position.distanceSquared(candidate.position)
+                if (distance < bestDistance) {
+                    bestDistance = distance
+                    best = candidate
+                }
+            }
+            projectile.target = best
+        }
+    }
+
     fun updateProjectiles(projectiles: List<Projectile>, deltaTime: Float) {
         for (projectile in projectiles) {
             if (!projectile.isActive) continue

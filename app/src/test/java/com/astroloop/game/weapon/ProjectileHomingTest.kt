@@ -20,6 +20,7 @@ class ProjectileHomingTest {
         val missile = Projectile().also {
             it.initialize(0f, 0f, 600f, 0f, ProjectileType.MISSILE, 10f, 4f)
             it.homingStrength = 3.5f
+            it.playerGuidance = true
             it.target = target
         }
 

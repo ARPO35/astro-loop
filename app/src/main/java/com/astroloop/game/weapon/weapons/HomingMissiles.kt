@@ -37,10 +37,17 @@ class HomingMissiles : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        // 按威胁排序并由火控分配目标；同一目标分到多枚导弹时，瞄准点会横向错开。
-        val locks = fireControl.allocate(
-            firer, targets, count, speed, KnobsWeapons.homingLifetime.value
-        )
+        // 火控与提前量只给玩家。非玩家保持原版：按距离轮流分配，沿 firer 朝向发射。
+        val locks = if (firer.isPlayerFirer) {
+            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.homingLifetime.value)
+        } else {
+            emptyList()
+        }
+        val fallbackTargets = if (firer.isPlayerFirer) {
+            emptyList()
+        } else {
+            targets.filter { it.isActive }.sortedBy { firer.position.distanceSquared(it.position) }
+        }
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
@@ -67,6 +74,8 @@ class HomingMissiles : Weapon(
             projectile.weaponId = id
             projectile.homingStrength = KnobsWeapons.homingStrength.value
             projectile.target = lock?.target
+                ?: fallbackTargets.getOrNull(i % fallbackTargets.size.coerceAtLeast(1))
+            projectile.playerGuidance = firer.isPlayerFirer
             projectile.color = ShipDefinitions.getWeaponColor("homing_missiles", state.isCorruptionRun)
         }
 

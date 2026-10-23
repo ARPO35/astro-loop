@@ -5,7 +5,6 @@ import com.astroloop.game.core.SoundManager
 import com.astroloop.game.data.EnemyType
 import com.astroloop.game.entity.*
 import com.astroloop.game.tuning.KnobsEnemies
-import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.EnergySaw
 import com.astroloop.game.weapon.weapons.HomingMissiles
 import com.astroloop.game.weapon.weapons.IonOrbiters
@@ -65,8 +64,6 @@ class EnemyWeaponSystem(
     private val firingState = GameState.createNeutral().also { it.isCorruptionRun = true }
     private val aimedFirer = AimedFirer(isEnemyFirer = true)
     private val targets = ArrayList<Entity>(1)
-    /** 每个敌人开火前重置一次；同一敌人的多武器共享，当前目标只有玩家。 */
-    private val fireControl = FireControl()
 
     /** The state [enemy]'s next shot fires with: no upgrades, and the Phantom's damage knob. */
     fun firingStateFor(enemy: EnemyShip): GameState {
@@ -128,8 +125,7 @@ class EnemyWeaponSystem(
         val aim = if (weapon is SpaceMines) atan2(enemy.velocity.y, enemy.velocity.x) else atan2(dy, dx)
         targets.clear()
         targets.add(ship)
-        fireControl.beginFrame(targets, enemy.position)
-        weapon.fire(aimedFirer.aimFrom(enemy, aim), firingStateFor(enemy), projectilePool, targets, fireControl)
+        weapon.fire(aimedFirer.aimFrom(enemy, aim), firingStateFor(enemy), projectilePool, targets)
         // Enemy fire reuses the player's weapon sound at reduced volume (off-beat: enemies fire on
         // their own cooldowns).
         SoundManager.playSFX("sfx_weapon_${enemy.weaponId}", 0.4f)

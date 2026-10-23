@@ -63,8 +63,7 @@ class ScatterShot : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
         val spreadAngle = SPREAD_CONE_RADIANS * areaOf(state)
-        val aim = fireControl.aimAngle(firer, targets, speed)
-        val baseAngle = if (aim.isNaN()) firer.rotation else aim
+        val baseAngle = playerAimAngle(firer, targets, speed, fireControl) ?: firer.rotation
 
         for (i in 0 until count) {
             // 先按提前量对准目标，再在锥形范围内随机散布

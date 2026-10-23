@@ -40,6 +40,8 @@ class Projectile : Entity() {
     // For homing projectiles
     var target: Entity? = null
     var homingStrength: Float = 0f
+    /** 只有玩家弹丸使用比例制导；敌机/舰队/僚机保持原版追瞄。 */
+    var playerGuidance: Boolean = false
 
     // For orbiters
     var orbitAngle: Float = 0f
@@ -173,38 +175,60 @@ class Projectile : Entity() {
 
     private fun updateHoming(deltaTime: Float) {
         val t = target
-        if (t != null && t.isActive && homingStrength > 0f) {
-            val dx = t.position.x - position.x
-            val dy = t.position.y - position.y
-            val rangeSq = dx * dx + dy * dy
-            val speed = velocity.length()
+        if (playerGuidance) {
+            updateProportionalNavigation(t, deltaTime)
+        } else {
+            updatePursuit(t, deltaTime)
+        }
+        super.update(deltaTime)
+    }
 
-            if (rangeSq > 1f && speed > 1f) {
-                val range = sqrt(rangeSq)
-                val relVx = t.velocity.x - velocity.x
-                val relVy = t.velocity.y - velocity.y
-                // 接近速度与视线角速度，都是比例制导的输入。
-                val closing = -(dx * relVx + dy * relVy) / range
-                val losRate = (dx * relVy - dy * relVx) / rangeSq
-                val maxTurn = homingStrength * deltaTime
+    private fun updateProportionalNavigation(t: Entity?, deltaTime: Float) {
+        if (t == null || !t.isActive || homingStrength <= 0f) return
+        val dx = t.position.x - position.x
+        val dy = t.position.y - position.y
+        val rangeSq = dx * dx + dy * dy
+        val speed = velocity.length()
 
-                val desiredTurn = if (closing > MIN_CLOSING_SPEED && range > ENDGAME_RANGE) {
-                    // 纯比例制导：转向角速度 = N · Vc · λdot / Vm。
-                    NAVIGATION_CONSTANT * closing * losRate / speed * deltaTime
-                } else {
-                    // 目标正在远离、横向漂移，或已进入末段：退化为追瞄，保证最终收敛。
-                    val angleError = wrapAngle(atan2(dy, dx) - velocity.angle())
-                    angleError * PURSUIT_GAIN * deltaTime
-                }
+        if (rangeSq > 1f && speed > 1f) {
+            val range = sqrt(rangeSq)
+            val relVx = t.velocity.x - velocity.x
+            val relVy = t.velocity.y - velocity.y
+            // 接近速度与视线角速度，都是比例制导的输入。
+            val closing = -(dx * relVx + dy * relVy) / range
+            val losRate = (dx * relVy - dy * relVx) / rangeSq
+            val maxTurn = homingStrength * deltaTime
 
-                val turn = desiredTurn.coerceIn(-maxTurn, maxTurn)
-                if (turn != 0f) {
-                    velocity.set(Vector2.fromAngle(velocity.angle() + turn, speed))
-                }
+            val desiredTurn = if (closing > MIN_CLOSING_SPEED && range > ENDGAME_RANGE) {
+                // 纯比例制导：转向角速度 = N · Vc · λdot / Vm。
+                NAVIGATION_CONSTANT * closing * losRate / speed * deltaTime
+            } else {
+                // 目标正在远离、横向漂移，或已进入末段：退化为追瞄，保证最终收敛。
+                val angleError = wrapAngle(atan2(dy, dx) - velocity.angle())
+                angleError * PURSUIT_GAIN * deltaTime
+            }
+
+            val turn = desiredTurn.coerceIn(-maxTurn, maxTurn)
+            if (turn != 0f) {
+                velocity.set(Vector2.fromAngle(velocity.angle() + turn, speed))
             }
         }
+    }
 
-        super.update(deltaTime)
+    /** 原版制导：始终朝目标当前位置转向，敌机、舰队和僚机使用。 */
+    private fun updatePursuit(t: Entity?, deltaTime: Float) {
+        if (t == null || !t.isActive || homingStrength <= 0f) return
+        val dx = t.position.x - position.x
+        val dy = t.position.y - position.y
+        val speed = velocity.length()
+        if (dx * dx + dy * dy <= 1f || speed <= 1f) return
+
+        val angleError = wrapAngle(atan2(dy, dx) - velocity.angle())
+        val maxTurn = homingStrength * deltaTime
+        val turn = angleError.coerceIn(-maxTurn, maxTurn)
+        if (turn != 0f) {
+            velocity.set(Vector2.fromAngle(velocity.angle() + turn, speed))
+        }
     }
 
     private fun wrapAngle(angle: Float): Float {
@@ -262,6 +286,7 @@ class Projectile : Entity() {
         ignoresSpawnShield = false
         target = null
         homingStrength = 0f
+        playerGuidance = false
         orbitCenter = null
         bounceCount = 0
         hitEntities.clear()
@@ -377,6 +402,7 @@ class Projectile : Entity() {
         maxPierces = 1
         target = null
         homingStrength = 0f
+        playerGuidance = false
         orbitAngle = 0f
         orbitRadius = 0f
         orbitSpeed = 0f

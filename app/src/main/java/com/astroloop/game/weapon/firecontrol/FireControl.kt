@@ -1,5 +1,6 @@
 package com.astroloop.game.weapon.firecontrol
 
+import com.astroloop.game.core.GameConfig
 import com.astroloop.game.data.EnemyDefinitions
 import com.astroloop.game.entity.Asteroid
 import com.astroloop.game.entity.Boss
@@ -7,7 +8,10 @@ import com.astroloop.game.entity.EnemyShip
 import com.astroloop.game.entity.Entity
 import com.astroloop.game.entity.Firer
 import com.astroloop.game.util.Vector2
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.sqrt
 
 /**
@@ -19,6 +23,8 @@ import kotlin.math.sqrt
  * - 单发武器使用 [aimAngle]，只取威胁最高的目标，不占用分配额度；多目标武器使用
  *   [allocate] 或 [selectTargets] 获得一组互不重复（目标不足时按份额均摊）的目标。
  * - 同一目标被分配多枚弹丸时，瞄准点会沿视线垂直方向错开，形成不同弹道，而不是重叠。
+ *
+ * 只由玩家的 `WeaponSystem` 使用；敌机、舰队和僚机保持原版武器逻辑。
  */
 class FireControl {
 
@@ -42,11 +48,18 @@ class FireControl {
     private val sharePenalty = 1.5f
 
     /** 每帧开始时重算威胁排序并清空分配记录。 */
-    fun beginFrame(targets: List<Entity>, origin: Vector2) {
+    fun beginFrame(
+        targets: List<Entity>,
+        origin: Vector2,
+        facing: Float = 0f,
+        playerVelocity: Vector2? = null,
+    ) {
         ranked.clear()
         assigned.clear()
         for (target in targets) {
-            if (target.isActive) ranked.add(RankedTarget(target, threatOf(target, origin)))
+            if (target.isActive) {
+                ranked.add(RankedTarget(target, threatOf(target, origin, facing, playerVelocity)))
+            }
         }
         ranked.sortWith(
             compareByDescending<RankedTarget> { it.threat }
@@ -63,14 +76,14 @@ class FireControl {
      * 没有可用目标时返回 [Float.NaN]，调用方应退回自己的朝向。
      */
     fun aimAngle(firer: Firer, targets: List<Entity>, projectileSpeed: Float, maxTime: Float = 8f): Float {
-        ensureFrame(targets, firer.position)
+        ensureFrame(targets, firer.position, firer.rotation, firer.velocity)
         val target = ranked.firstOrNull()?.target ?: return Float.NaN
         return aimAngleAt(firer, target, projectileSpeed, maxTime)
     }
 
     /** 第二目标的角度，用于 Railgun 尾射等需要另一条射线的武器。 */
     fun secondaryAimAngle(firer: Firer, targets: List<Entity>, projectileSpeed: Float, maxTime: Float = 8f): Float {
-        ensureFrame(targets, firer.position)
+        ensureFrame(targets, firer.position, firer.rotation, firer.velocity)
         val target = ranked.getOrNull(1)?.target ?: return Float.NaN
         return aimAngleAt(firer, target, projectileSpeed, maxTime)
     }
@@ -96,7 +109,7 @@ class FireControl {
         projectileSpeed: Float,
         maxTime: Float = 8f,
     ): List<Lock> {
-        ensureFrame(targets, firer.position)
+        ensureFrame(targets, firer.position, firer.rotation, firer.velocity)
         if (count <= 0) return emptyList()
 
         val locks = ArrayList<Lock>(count)
@@ -124,7 +137,7 @@ class FireControl {
      * [allowed] 用于排除屏幕外或不可伤害的目标，同时保留与其他武器共享的分配计数。
      */
     fun selectTargets(firer: Firer, allowed: Collection<Entity>, count: Int): List<Entity> {
-        ensureFrame(allowed.toList(), firer.position)
+        ensureFrame(allowed.toList(), firer.position, firer.rotation, firer.velocity)
         if (count <= 0) return emptyList()
 
         val allowedSet = allowed.toHashSet()
@@ -198,52 +211,117 @@ class FireControl {
         return sign * ring
     }
 
-    private fun ensureFrame(targets: List<Entity>, origin: Vector2) {
-        if (!ready) beginFrame(targets, origin)
+    private fun ensureFrame(
+        targets: List<Entity>,
+        origin: Vector2,
+        facing: Float,
+        playerVelocity: Vector2?,
+    ) {
+        if (!ready) beginFrame(targets, origin, facing, playerVelocity)
     }
 
     /**
-     * 威胁分。不是单纯的距离排序：高 tier、射速快、正在接近、并且更近的目标更危险；
-     * Boss 单独加权。已经可以被打穿/正在跃迁的目标降权，避免把整轮火力浪费在无敌单位上。
+     * 威胁分以“预计撞击本机的时间”为主，其次才是距离、本机朝向和类型。
+     *
+     * - 撞击时间用目标与玩家的相对速度求最小正根；不在碰撞航线上时退化为最近接近时间。
+     * - 本机转向：目标偏离船头越远，附加的转向时间越长，威胁越低。
+     * - 距离和朝向只做次级修正；敌机类型权重高于小行星，Boss 高于普通敌机。
+     * - 跃迁中/出生护盾/Boss 无敌等暂时不可伤害状态继续降权。
      */
-    fun threatOf(entity: Entity, origin: Vector2): Float {
+    fun threatOf(
+        entity: Entity,
+        origin: Vector2,
+        facing: Float = 0f,
+        playerVelocity: Vector2? = null,
+    ): Float {
         val dx = entity.position.x - origin.x
         val dy = entity.position.y - origin.y
         val distance = sqrt(dx * dx + dy * dy).coerceAtLeast(1f)
 
-        // 目标朝玩家方向的速度分量：越大，越可能先撞上或先进入射程。
-        val closing = ((entity.velocity.x * -dx + entity.velocity.y * -dy) / distance).coerceAtLeast(0f)
+        val bearing = atan2(dy, dx)
+        val angleOffset = abs(wrapAngle(bearing - facing))
+        val turnPenalty = (angleOffset / PI.toFloat()) * TURN_PENALTY_SECONDS
 
-        val base = when (entity) {
-            is Boss -> 45f
+        val impactTime = timeToImpact(entity, origin, playerVelocity)
+        val urgency = 1f / (impactTime + turnPenalty + URGENCY_PADDING)
+
+        val proximity = 1f + 250f / (distance + 250f)
+        val facingWeight = 0.75f + 0.25f * cos(angleOffset)
+        val typeWeight = when (entity) {
+            is Boss -> 2f
             is EnemyShip -> {
-                val def = EnemyDefinitions.getDef(entity.type)
-                val tier = def.tier.coerceAtLeast(1)
-                val shotsPerSecond = 1f / def.fireRate.coerceAtLeast(0.25f)
-                4f + tier * 4f + shotsPerSecond * 1.5f
+                val tier = EnemyDefinitions.getDef(entity.type).tier.coerceIn(1, 4)
+                1.4f + tier * 0.05f
             }
-            is Asteroid -> 2.5f * entity.getDamageScale()
-            else -> 2f
-        }
-
-        val proximity = 1f + 600f / (distance + 200f)
-        val approach = 1f + closing / 250f
-        val healthFactor = if (entity.maxHealth > 0f) {
-            0.75f + 0.25f * (entity.health / entity.maxHealth).coerceIn(0f, 1f)
-        } else {
-            1f
+            is Asteroid -> 1f
+            else -> 0.8f
         }
         val status = when (entity) {
             is EnemyShip -> when {
-                entity.isWarping -> 0.1f
-                entity.isSpawnShielded -> 0.5f
+                entity.isWarping -> 0.05f
+                entity.isSpawnShielded -> 0.6f
                 else -> 1f
             }
-            is Boss -> if (entity.shielded || entity.isInvulnerable) 0.6f else 1.25f
+            is Boss -> if (entity.shielded || entity.isInvulnerable) 0.7f else 1.1f
             is Asteroid -> if (entity.fragmentImmunityTimer > 0f) 0.2f else 1f
             else -> 1f
         }
 
-        return base * proximity * approach * healthFactor * status
+        return urgency * proximity * facingWeight * typeWeight * status
+    }
+
+    /**
+     * 目标与玩家按当前速度继续运动时，最早接触的时间。
+     * 没有碰撞解时退化为最近接近时间；正在远离或静止的目标按距离给一个有限值。
+     */
+    private fun timeToImpact(entity: Entity, origin: Vector2, playerVelocity: Vector2?): Float {
+        val px = playerVelocity?.x ?: 0f
+        val py = playerVelocity?.y ?: 0f
+        val dx = entity.position.x - origin.x
+        val dy = entity.position.y - origin.y
+        val distance = sqrt(dx * dx + dy * dy)
+        val radius = entity.radius + GameConfig.SHIP_BASE_SIZE
+        if (distance <= radius) return 0f
+
+        val rvx = entity.velocity.x - px
+        val rvy = entity.velocity.y - py
+        val a = rvx * rvx + rvy * rvy
+        if (a < 0.0001f) return distance / 100f + 2f
+
+        // |r + rv·t| = playerRadius + targetRadius
+        val b = 2f * (dx * rvx + dy * rvy)
+        val c = distance * distance - radius * radius
+        val discriminant = b * b - 4f * a * c
+        if (discriminant >= 0f) {
+            val root = sqrt(discriminant)
+            val t1 = (-b - root) / (2f * a)
+            val t2 = (-b + root) / (2f * a)
+            var first = -1f
+            if (t1 >= 0f) first = t1
+            if (t2 >= 0f && (first < 0f || t2 < first)) first = t2
+            if (first >= 0f) return first
+        }
+
+        val closestTime = -(dx * rvx + dy * rvy) / a
+        if (closestTime <= 0f) return distance / 100f + 2f
+
+        val missX = dx + rvx * closestTime
+        val missY = dy + rvy * closestTime
+        val missDistance = sqrt(missX * missX + missY * missY)
+        return closestTime + missDistance / sqrt(a)
+    }
+
+    private fun wrapAngle(angle: Float): Float {
+        var wrapped = angle
+        while (wrapped > PI) wrapped -= (2f * PI).toFloat()
+        while (wrapped < -PI) wrapped += (2f * PI).toFloat()
+        return wrapped
+    }
+
+    companion object {
+        /** 目标在正后方时额外计入的转向时间（秒）。 */
+        private const val TURN_PENALTY_SECONDS = 0.8f
+        /** 防止撞击时间为 0 时威胁分无限大。 */
+        private const val URGENCY_PADDING = 0.35f
     }
 }

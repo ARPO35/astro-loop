@@ -49,13 +49,17 @@ class Railgun : Weapon(
         // Slugs alternate front, back, front…: with Duplicator Core's second slug, one flies at the
         // primary threat and one at the secondary threat. With no secondary, the rear slug fires
         // opposite the primary aim.
-        val primaryAim = fireControl.aimAngle(firer, targets, speed, KnobsWeapons.railgunLifetime.value)
-        val secondaryAim = fireControl.secondaryAimAngle(firer, targets, speed, KnobsWeapons.railgunLifetime.value)
-        val frontAngle = if (primaryAim.isNaN()) firer.rotation else primaryAim
+        val primaryAim = playerAimAngle(
+            firer, targets, speed, fireControl, KnobsWeapons.railgunLifetime.value
+        )
+        val secondaryAim = playerSecondaryAimAngle(
+            firer, targets, speed, fireControl, KnobsWeapons.railgunLifetime.value
+        )
+        val frontAngle = primaryAim ?: firer.rotation
         val backAngle = when {
-            !secondaryAim.isNaN() -> secondaryAim
-            primaryAim.isNaN() -> firer.rotation + PI.toFloat()
-            else -> primaryAim + PI.toFloat()
+            secondaryAim != null -> secondaryAim
+            primaryAim != null -> primaryAim + PI.toFloat()
+            else -> firer.rotation + PI.toFloat()
         }
         val frontCount = count - count / 2
         val backCount = count / 2

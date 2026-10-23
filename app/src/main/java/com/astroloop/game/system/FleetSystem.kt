@@ -10,7 +10,6 @@ import com.astroloop.game.entity.*
 import com.astroloop.game.util.Vector2
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.weapon.WeaponFactory
-import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.SolarStorm
 import com.astroloop.game.weapon.weapons.EnergySaw
 import com.astroloop.game.weapon.weapons.IonOrbiters
@@ -216,7 +215,6 @@ class FleetSystem(
     // Shots at the boss: the player's own weapon classes fire through this, aimed at the boss
     private val shotFirer = AimedFirer(isEnemyFirer = false)
     private val shotTargets = ArrayList<Entity>(1)
-    private val fireControl = FireControl()
     /** Past Astro's weapons, one per id, kept between shots (Pulse Cannon alternates its fan). */
     private val pastAstroWeapons = HashMap<String, Weapon?>()
 
@@ -356,8 +354,7 @@ class FleetSystem(
                 "ion_orbiters" -> {
                     val weapon = IonOrbiters().also { it.level = 1 }
                     fs.orbiterWeapon = weapon
-                    fireControl.beginFrame(emptyList(), fs.position)
-                    weapon.fire(firerFor(fs), fleetNeutralState, projectilePool, emptyList(), fireControl)
+                    weapon.fire(firerFor(fs), fleetNeutralState, projectilePool, emptyList())
                     weapon.makeOrbitersVisible()
                 }
             }
@@ -686,8 +683,7 @@ class FleetSystem(
             val aim = atan2(boss.position.y - origin.y, boss.position.x - origin.x)
             shotTargets.clear()
             shotTargets.add(boss)
-            fireControl.beginFrame(shotTargets, origin)
-            weapon.fire(shotFirer.aimFrom(origin, aim), fleetNeutralState, projectilePool, shotTargets, fireControl)
+            weapon.fire(shotFirer.aimFrom(origin, aim), fleetNeutralState, projectilePool, shotTargets)
         }
 
         // Shield reacts the instant the shot is fired (no projectile travel-time gap).

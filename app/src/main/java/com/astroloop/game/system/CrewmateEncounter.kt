@@ -10,7 +10,6 @@ import com.astroloop.game.entity.*
 import com.astroloop.game.entity.Boss
 import com.astroloop.game.weapon.Weapon
 import com.astroloop.game.weapon.WeaponFactory
-import com.astroloop.game.weapon.firecontrol.FireControl
 import com.astroloop.game.weapon.weapons.IonOrbiters
 import com.astroloop.game.weapon.weapons.FrostRing
 import com.astroloop.game.weapon.weapons.SpaceMines
@@ -25,7 +24,6 @@ class CrewmateEncounter(
     var crewmateShip: EnemyShip? = null
     private var crewmateWeaponInstances = mutableListOf<Weapon>()
     private val neutralState = GameState.createNeutral()
-    private val fireControl = FireControl()
     var crewmatePassives = mutableListOf<String>()
     var crewmatePilotId: String = ""
     var crewmateShipId: String = ""
@@ -203,7 +201,6 @@ class CrewmateEncounter(
             enemy.velocity.set(0f, 0f)
         }
 
-        fireControl.beginFrame(listOf(ship), enemy.position)
         for (weapon in crewmateWeaponInstances) {
             weapon.update(deltaTime)
             when (weapon) {
@@ -212,7 +209,7 @@ class CrewmateEncounter(
                 is SpaceMines  -> weapon.updatePendingMines(deltaTime, projectilePool, neutralState)
             }
             if (weapon.canFire()) {
-                weapon.fire(enemy, neutralState, projectilePool, listOf(ship), fireControl)
+                weapon.fire(enemy, neutralState, projectilePool, listOf(ship))
             }
         }
     }

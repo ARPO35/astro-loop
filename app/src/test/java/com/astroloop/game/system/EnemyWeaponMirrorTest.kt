@@ -127,6 +127,14 @@ class EnemyWeaponMirrorTest {
     }
 
     @Test
+    fun `enemy fire aims at the player's current position, not a lead`() {
+        val ship = shipAt().also { it.velocity.set(0f, 200f) }
+        val (enemy, shots) = enemyVolley("pulse_cannon", ship)
+        val expected = atan2(ship.position.y - enemy.position.y, ship.position.x - enemy.position.x)
+        for (shot in shots) assertEquals(expected, shot.velocity.angle(), 0.001f)
+    }
+
+    @Test
     fun `the missile speed follows its knob and no other enemy's shot speed changes`() {
         val before = enemyFor.keys.filter { it != "homing_missiles" && it != "scatter_shot" }
             .associateWith { id -> enemyVolley(id, shipAt()).second.map { it.velocity.length() } }

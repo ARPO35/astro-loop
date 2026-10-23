@@ -42,8 +42,12 @@ class PhoenixFlare : Weapon(
             it.position.x > firer.position.x - halfW && it.position.x < firer.position.x + halfW &&
             it.position.y > firer.position.y - halfH && it.position.y < firer.position.y + halfH
         }
-        // 环形爆发在目标当前位置生成，不需要提前量；目标选择按威胁排序。
-        val validTargets = fireControl.selectTargets(firer, candidates, 3)
+        // 环形爆发在目标当前位置生成，不需要提前量；玩家按威胁排序，非玩家保持原版随机。
+        val validTargets = if (firer.isPlayerFirer) {
+            fireControl.selectTargets(firer, candidates, 3)
+        } else {
+            candidates.shuffled().take(3)
+        }
 
         for ((r, target) in validTargets.withIndex()) {
             val speed = KnobsWeapons.phoenixRingSpeed[r].value * areaOf(state)

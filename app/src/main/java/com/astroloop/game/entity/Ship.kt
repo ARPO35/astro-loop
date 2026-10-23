@@ -6,6 +6,7 @@ import kotlin.math.PI
 
 class Ship : Entity(), Firer {
     override val isEnemyFirer: Boolean = false
+    override val isPlayerFirer: Boolean = true
 
     val moveDirection = Vector2()
     var speed: Float = GameConfig.SHIP_BASE_SPEED

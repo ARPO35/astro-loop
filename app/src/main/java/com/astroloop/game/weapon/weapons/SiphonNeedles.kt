@@ -36,8 +36,7 @@ class SiphonNeedles : Weapon(
         val damage = getDamage(state)
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
-        val aim = fireControl.aimAngle(firer, targets, speed)
-        val baseAngle = if (aim.isNaN()) firer.rotation else aim
+        val baseAngle = playerAimAngle(firer, targets, speed, fireControl) ?: firer.rotation
 
         for (i in 0 until count) {
             // Own spread knob; its default matches NeedleGun's so the arcs start identical

@@ -9,4 +9,9 @@ interface Firer {
     val radius: Float
     /** True when this firer is an enemy — weapons use this to mark spawned projectiles. */
     val isEnemyFirer: Boolean
+    /**
+     * True only for the player's ship. Fire control, lead and proportional guidance are
+     * player-only; enemies, fleet ships and crewmates keep the original weapon behaviour.
+     */
+    val isPlayerFirer: Boolean get() = false
 }

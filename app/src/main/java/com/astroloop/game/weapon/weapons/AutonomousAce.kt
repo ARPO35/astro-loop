@@ -33,7 +33,16 @@ class AutonomousAce : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
 
-        val locks = fireControl.allocate(firer, targets, count, speed, KnobsWeapons.aceLifetime.value)
+        val locks = if (firer.isPlayerFirer) {
+            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.aceLifetime.value)
+        } else {
+            emptyList()
+        }
+        val fallbackTargets = if (firer.isPlayerFirer) {
+            emptyList()
+        } else {
+            targets.filter { it.isActive }.sortedBy { firer.position.distanceSquared(it.position) }
+        }
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
@@ -60,6 +69,8 @@ class AutonomousAce : Weapon(
             projectile.weaponId = id
             projectile.homingStrength = KnobsWeapons.aceHoming.value
             projectile.target = lock?.target
+                ?: fallbackTargets.getOrNull(i % fallbackTargets.size.coerceAtLeast(1))
+            projectile.playerGuidance = firer.isPlayerFirer
             projectile.color = if (!state.isCorruptionRun &&
                 state.activePilotId == PassiveDefinitions.ASTRO_PILOT_ID && !state.astroLoopMode)
                 PassiveDefinitions.DRONE_COLOR_TB26   // TB-26-X: steel blue, matches the drone

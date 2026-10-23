@@ -39,8 +39,7 @@ class FlakCannon : Weapon(
         val speed = getProjectileSpeed(state)
         val count = getProjectileCount(state)
         val explosionRadius = getExplosionRadius(state)
-        val aim = fireControl.aimAngle(firer, targets, speed)
-        val baseAngle = if (aim.isNaN()) firer.rotation else aim
+        val baseAngle = playerAimAngle(firer, targets, speed, fireControl) ?: firer.rotation
 
         for (i in 0 until count) {
             val spreadAngle = (i - (count - 1) / 2f) * KnobsWeapons.flakSpread.value

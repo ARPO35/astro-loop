@@ -68,9 +68,51 @@ class FireControlTest {
     }
 
     @Test
+    fun `撞击时间优先于距离`() {
+        val nearButIdle = Asteroid().also {
+            it.initialize(200f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+            it.velocity.zero()
+        }
+        val farButIncoming = Asteroid().also {
+            it.initialize(300f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+            it.velocity.set(-400f, 0f)
+        }
+
+        val control = FireControl()
+        control.beginFrame(listOf(nearButIdle, farButIncoming), Vector2())
+
+        assertEquals(farButIncoming, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `目标偏离船头越远威胁越低`() {
+        val front = enemy(EnemyType.SCOUT, 200f, vx = -200f)
+        val behind = enemy(EnemyType.SCOUT, -200f, vx = 200f)
+
+        val control = FireControl()
+        control.beginFrame(listOf(front, behind), Vector2(), facing = 0f)
+
+        assertEquals(front, control.rankedTargets().first().target)
+    }
+
+    @Test
+    fun `同一条件下敌机权重高于小行星`() {
+        val shipTarget = enemy(EnemyType.SCOUT, 200f)
+        val rock = Asteroid().also {
+            it.initialize(200f, 0f, AsteroidSize.LARGE, AsteroidType.ROCK, Vector2())
+        }
+
+        val control = FireControl()
+        control.beginFrame(listOf(rock, shipTarget), Vector2())
+
+        assertEquals(shipTarget, control.rankedTargets().first().target)
+    }
+
+    @Test
     fun `Boss 的威胁高于普通敌机`() {
         val boss = Boss().also {
             it.position.set(300f, 0f)
+            it.velocity.set(-150f, 0f)
             it.isActive = true
             it.isInvulnerable = false
             it.shielded = false

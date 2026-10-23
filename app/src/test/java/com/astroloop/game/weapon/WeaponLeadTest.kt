@@ -23,6 +23,7 @@ class WeaponLeadTest {
         override val rotation = 0f
         override val radius = 12f
         override val isEnemyFirer = false
+        override val isPlayerFirer = true
     }
 
     private fun movingTarget(x: Float, y: Float, vx: Float, vy: Float, radius: Float = 10f): Entity =

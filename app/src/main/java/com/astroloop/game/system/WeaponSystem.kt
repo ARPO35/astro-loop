@@ -55,7 +55,7 @@ class WeaponSystem(
         }
 
         // 每帧重算威胁排序并清空上一帧的目标分配。
-        fireControl.beginFrame(targets, ship.position)
+        fireControl.beginFrame(targets, ship.position, ship.rotation, ship.velocity)
 
         // Auto-fire all weapons (beat-synced)
         for (weapon in activeWeapons.values) {

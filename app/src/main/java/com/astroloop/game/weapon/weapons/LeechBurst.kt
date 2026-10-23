@@ -51,8 +51,7 @@ class LeechBurst : Weapon(
         // Read from ScatterShot rather than copied, so this cannot drift wider than the weapon it
         // evolves from — an evolution that scattered worse than its base would be a downgrade.
         val spreadAngle = SPREAD_CONE_RADIANS * areaOf(state)
-        val aim = fireControl.aimAngle(firer, targets, speed)
-        val baseAngle = if (aim.isNaN()) firer.rotation else aim
+        val baseAngle = playerAimAngle(firer, targets, speed, fireControl) ?: firer.rotation
 
         for (i in 0 until count) {
             val angle = baseAngle + (Random.nextFloat() - 0.5f) * spreadAngle

@@ -37,9 +37,16 @@ class HunterKiller : Weapon(
         val count = getProjectileCount(state)
         val explosionRadius = KnobsWeapons.hunterExplosionRadius.value * areaOf(state) * 1.4f   // mirrors maxed (L5) Cluster Bomb
 
-        val locks = fireControl.allocate(
-            firer, targets, count, speed, KnobsWeapons.hunterLifetime.value
-        )
+        val locks = if (firer.isPlayerFirer) {
+            fireControl.allocate(firer, targets, count, speed, KnobsWeapons.hunterLifetime.value)
+        } else {
+            emptyList()
+        }
+        val fallbackTargets = if (firer.isPlayerFirer) {
+            emptyList()
+        } else {
+            targets.filter { it.isActive }.sortedBy { firer.position.distanceSquared(it.position) }
+        }
 
         for (i in 0 until count) {
             val lock = locks.getOrNull(i)
@@ -67,6 +74,8 @@ class HunterKiller : Weapon(
             projectile.radius = 12f
             projectile.homingStrength = KnobsWeapons.hunterHoming.value
             projectile.target = lock?.target
+                ?: fallbackTargets.getOrNull(i % fallbackTargets.size.coerceAtLeast(1))
+            projectile.playerGuidance = firer.isPlayerFirer
 
             projectile.explodeOnDeath = true
             projectile.explosionRadius = explosionRadius

@@ -173,6 +173,7 @@ class GameSurfaceView(
     private val activePowerUps = ArrayList<PowerUp>(50)
     private val activeEnemies = ArrayList<EnemyShip>(20)
     private val allTargetsCache = ArrayList<Entity>(350)
+    private val homingTargetsCache = ArrayList<Entity>(350)
 
     // Renderers
     private val shapeRenderer = ShapeRenderer()
@@ -2284,6 +2285,7 @@ class GameSurfaceView(
         }
 
         // Update movement
+        retargetHomingProjectiles(projectiles, enemies, asteroids, state)
         movementSystem.updateAsteroids(asteroids, ship, deltaTime, state.survivalTime)
         movementSystem.updateProjectiles(projectiles, deltaTime)
         movementSystem.updatePowerUps(powerUps, deltaTime)
@@ -3269,6 +3271,22 @@ class GameSurfaceView(
             isCrit = true
         }
         return Pair(damage, isCrit)
+    }
+
+    /** 制导武器丢失目标后，从当前在场的敌机/小行星/Boss 中改追最近的一个。 */
+    private fun retargetHomingProjectiles(
+        projectiles: List<Projectile>,
+        enemies: List<EnemyShip>,
+        asteroids: List<Asteroid>,
+        state: GameState,
+    ) {
+        homingTargetsCache.clear()
+        homingTargetsCache.addAll(enemies)
+        homingTargetsCache.addAll(asteroids)
+        if (state.bossActive && boss.isActive && state.bossFightPhase < PHASE_OTHER_SPAWN) {
+            homingTargetsCache.add(boss)
+        }
+        movementSystem.retargetHomingProjectiles(projectiles, homingTargetsCache)
     }
 
     private fun applyGamblersMineEffect(x: Float, y: Float) {
@@ -7883,6 +7901,7 @@ class GameSurfaceView(
         // Update movement for asteroids, projectiles, power-ups
         EntityPools.powerUps.getActiveEntities(activePowerUps)
         val powerUps = activePowerUps
+        retargetHomingProjectiles(projectiles, enemies, asteroids, state)
         movementSystem.updateAsteroids(asteroids, ship, deltaTime, state.survivalTime)
         movementSystem.updateProjectiles(projectiles, deltaTime)
         movementSystem.updatePowerUps(powerUps, deltaTime)

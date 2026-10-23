@@ -70,6 +70,32 @@ abstract class Weapon(
 
     fun canFire(): Boolean = cooldownTimer <= 0
 
+    /** 火控与提前量只给玩家；非玩家 firer 返回 null，武器沿用原版朝向。 */
+    protected fun playerAimAngle(
+        firer: Firer,
+        targets: List<Entity>,
+        projectileSpeed: Float,
+        fireControl: FireControl,
+        maxTime: Float = 8f,
+    ): Float? {
+        if (!firer.isPlayerFirer) return null
+        val angle = fireControl.aimAngle(firer, targets, projectileSpeed, maxTime)
+        return if (angle.isNaN()) null else angle
+    }
+
+    /** 第二目标角度，同样只给玩家；用于 Railgun 尾射。 */
+    protected fun playerSecondaryAimAngle(
+        firer: Firer,
+        targets: List<Entity>,
+        projectileSpeed: Float,
+        fireControl: FireControl,
+        maxTime: Float = 8f,
+    ): Float? {
+        if (!firer.isPlayerFirer) return null
+        val angle = fireControl.secondaryAimAngle(firer, targets, projectileSpeed, maxTime)
+        return if (angle.isNaN()) null else angle
+    }
+
     /**
      * 开火。[fireControl] 由 WeaponSystem 每帧传入并共享目标分配；一次性调用（测试、敌机、
      * 舰队）可以省略，默认新建一个只服务本次开火的实例。

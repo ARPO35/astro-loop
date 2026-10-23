@@ -46,8 +46,7 @@ class PulseCannon : Weapon(
         val count = getProjectileCount(state)
 
         // 火控瞄准：取威胁最高的目标，并按弹速计算提前量。没有目标时退回船头方向。
-        val aim = fireControl.aimAngle(firer, targets, speed)
-        val baseAngle = if (aim.isNaN()) firer.rotation else aim
+        val baseAngle = playerAimAngle(firer, targets, speed, fireControl) ?: firer.rotation
 
         val spreadAngle = KnobsWeapons.pulseSpread.value
 

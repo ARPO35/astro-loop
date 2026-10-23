@@ -30,12 +30,12 @@ class WeaponFireRateTest {
         assertEquals(0L, w.beatPhaseOffsetMs)
     }
 
-    // ── PulseCannon: 0.5s / 15 dmg / phase 0 ───────────────────
+    // ── PulseCannon: 0.25s / 15 dmg / phase 0 ──────────────────
 
     @Test
-    fun `PulseCannon baseCooldown is 0_5`() {
+    fun `PulseCannon baseCooldown is 0_25`() {
         val w = PulseCannon()
-        assertEquals(0.5f, w.baseCooldown, 0.001f)
+        assertEquals(0.25f, w.baseCooldown, 0.001f)
     }
 
     @Test

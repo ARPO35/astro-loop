@@ -58,8 +58,12 @@ class SolarStorm : Weapon(
             // dodge out of a boss that was supposed to be untouchable.
             (it !is Boss || (!it.isInvulnerable && !it.shielded))
         }
-        // 瞬间落雷没有飞行时间，因此不需要提前量；这里只做威胁排序与目标分配。
-        val validTargets = fireControl.selectTargets(firer, candidates, targetCount)
+        // 瞬间落雷没有飞行时间。玩家用威胁排序与目标分配；非玩家保持原版随机目标。
+        val validTargets = if (firer.isPlayerFirer) {
+            fireControl.selectTargets(firer, candidates, targetCount)
+        } else {
+            candidates.shuffled().take(targetCount)
+        }
 
         val weaponColor = ShipDefinitions.getWeaponColor("solar_storm", state.isCorruptionRun)
         for (target in validTargets) {
