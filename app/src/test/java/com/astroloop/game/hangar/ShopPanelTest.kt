@@ -402,6 +402,14 @@ class ShopPanelTest {
             spin.left >= drawn.left && spin.right <= drawn.right &&
                 spin.top >= drawn.top && spin.bottom <= drawn.bottom
         )
+        val bulk = renderer.bulkSpinButtonRect
+        assertFalse("the machine must have drawn its 20-pull button", bulk.isEmpty)
+        assertTrue("the 20-pull button must sit right of the single spin", bulk.left > spin.right)
+        assertTrue(
+            "20-pull button ${bulk.left}..${bulk.right} must sit inside the panel's machine",
+            bulk.left >= drawn.left && bulk.right <= drawn.right &&
+                bulk.top >= drawn.top && bulk.bottom <= drawn.bottom
+        )
         val hatch = state.hatchRect
         assertNotNull("the machine must have drawn its hatch", hatch)
         assertTrue(

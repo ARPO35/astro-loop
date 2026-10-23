@@ -1201,7 +1201,9 @@ class HangarSurfaceView(
         }
 
         // Auto-spin when holding the spin button (disabled after jackpot)
-        if (spinButtonHeld && !state.isSpinning && state.spinResultTime > 0 && state.spinResultUpgrade == null) {
+        if (!state.isBulkSpinning && spinButtonHeld && !state.isSpinning &&
+            state.spinResultTime > 0 && state.spinResultUpgrade == null
+        ) {
             val sinceResult = System.currentTimeMillis() - state.spinResultTime
             if (sinceResult > 600L) {
                 handleSlotSpin()
@@ -1209,7 +1211,7 @@ class HangarSurfaceView(
         }
 
         // Astro auto-gambling at slot machine in corruption
-        if (state.astroAtSlotMachine && state.currentPage == 2) {
+        if (!state.isBulkSpinning && state.astroAtSlotMachine && state.currentPage == 2) {
             state.astroAutoSpinTimer += deltaTime
             if (state.astroAutoSpinTimer >= state.astroAutoSpinInterval && !state.isSpinning) {
                 if (state.actualYen >= 100) {
@@ -1937,12 +1939,21 @@ class HangarSurfaceView(
                     // offset or a press during a post-swipe settle can hold against one room-local
                     // X and release against another.
                     val (spinX, spinY) = storeHitPoint(ex, ey)
-                    if (state.currentPage == 2 && renderer.spinButtonRect.contains(spinX, spinY)) {
-                        spinButtonHeld = true
-                        // Press only. Auto-spin re-enters handleSlotSpin from updateBrowsing while
-                        // the finger stays down, and a tap per spin would turn a held button into a
-                        // continuous rattle.
-                        buttonTap()
+                    if (state.currentPage == 2) {
+                        when {
+                            renderer.spinButtonRect.contains(spinX, spinY) -> {
+                                spinButtonHeld = true
+                                // Press only. Auto-spin re-enters handleSlotSpin from
+                                // updateBrowsing while the finger stays down, and a tap per spin
+                                // would turn a held button into a continuous rattle.
+                                buttonTap()
+                            }
+                            renderer.bulkSpinButtonRect.contains(spinX, spinY) -> {
+                                // 20 连抽是一次性结算，按住它不会重复触发；这里只给按下触感，
+                                // 真正的扣费与开奖在 ACTION_UP 的 handleStoreTap 里。
+                                buttonTap()
+                            }
+                        }
                     }
                     // Store tiles: the press starts a hold. Resolve against the rest position for
                     // the same reason the spin button does — DOWN and UP must agree on the offset
@@ -2705,11 +2716,18 @@ class HangarSurfaceView(
                 }
             }
             HangarPanels.Panel.SLOT -> {
-                if (renderer.spinButtonRect.contains(hx, hy)) {
-                    spinButtonHeld = true
-                    // Press only — auto-spin re-enters handleSlotSpin from updateBrowsing while the
-                    // finger stays down, and a tap per spin would be a continuous rattle.
-                    buttonTap()
+                when {
+                    renderer.spinButtonRect.contains(hx, hy) -> {
+                        spinButtonHeld = true
+                        // Press only — auto-spin re-enters handleSlotSpin from updateBrowsing
+                        // while the finger stays down, and a tap per spin would be a continuous
+                        // rattle.
+                        buttonTap()
+                    }
+                    renderer.bulkSpinButtonRect.contains(hx, hy) -> {
+                        // 20 连抽在松开时一次性结算，按住不自动重复。
+                        buttonTap()
+                    }
                 }
             }
             else -> {}
@@ -3202,9 +3220,13 @@ class HangarSurfaceView(
             }
         }
 
-        // Slot machine spin button
+        // Slot machine spin button — 左单抽、右 20 连抽是两个互不重叠的命中矩形。
         if (renderer.spinButtonRect.contains(rx, ry)) {
             handleSlotSpin()
+            return
+        }
+        if (renderer.bulkSpinButtonRect.contains(rx, ry)) {
+            handleBulkSlotSpin()
             return
         }
     }
@@ -3215,15 +3237,18 @@ class HangarSurfaceView(
      * internal: the test seam for the deferred payout. Everything the player is owed by a spin
      * lands here rather than at roll time, so the reels are never showing one thing while the
      * save already holds another.
+     *
+     * @param announce 播放中奖/jackpot 音效。20 连抽在内部结算 20 次，只在最后播一次总音效，
+     *   否则 20 层 SFX 会叠成噪音。
      */
-    internal fun completeSpin(now: Long) {
+    internal fun completeSpin(now: Long, announce: Boolean = true) {
         state.isSpinning = false
         state.spinResultTime = now
         val isJackpot = state.reelValues[0] == StorePageRenderer.SYM_ROCKET &&
             state.reelValues[1] == StorePageRenderer.SYM_ROCKET &&
             state.reelValues[2] == StorePageRenderer.SYM_ROCKET
         if (isJackpot) {
-            SoundManager.playSFX("sfx_slot_jackpot")
+            if (announce) SoundManager.playSFX("sfx_slot_jackpot")
             spinButtonHeld = false  // Let jackpot animation play before resuming auto-spin
         }
         // The free upgrade the jackpot promised at roll time, handed over now the reels have
@@ -3235,7 +3260,7 @@ class HangarSurfaceView(
             }
         }
         if (state.spinResultYen > 0) {
-            if (!isJackpot) SoundManager.playSFX("sfx_slot_win")
+            if (!isJackpot && announce) SoundManager.playSFX("sfx_slot_win")
             synchronized(upgradeLock) {
                 val newYen = state.actualYen + state.spinResultYen
                 persistence.setYen(newYen)
@@ -3245,17 +3270,88 @@ class HangarSurfaceView(
     }
 
     /**
+     * 20 连抽：一次点击、一次扣费、20 次单抽结算。
+     *
+     * 走的是和单抽完全相同的 [handleSlotSpin] / [completeSpin]：中奖、升级、jackpot、Whiskers
+     * 招募、发奖和 telemetry 都是同一套，只是不等 20 次滚轮动画，而是一次性结算完由结果屏
+     * 给出汇总。因此每一次都有“先扣 100、再发该发的东西”，不存在只扣不发或只发不扣。
+     *
+     * 余额在进入循环前确认（20 × 单抽价）；不够就原地返回，一分不扣。结算期间
+     * [HangarState.isBulkSpinning] 会挡住按住自动连抽、Astro 自动赌和任何并发单抽，避免同一帧里
+     * 插队扣费。
+     */
+    internal fun handleBulkSlotSpin() {
+        if (state.isSpinning || state.isBulkSpinning) return
+        synchronized(upgradeLock) {
+            if (state.isSpinning || state.isBulkSpinning) return
+            if (state.actualYen < StorePageRenderer.BULK_SPIN_COST) return
+            state.isBulkSpinning = true
+        }
+
+        var completed = 0
+        var totalYen = 0
+        var upgrades = 0
+        var jackpots = 0
+        try {
+            // 批结算期间不显示上一抽单抽结果；全部结束后由汇总接管结果屏。
+            state.spinResultTime = 0
+            // 一次开转音，而不是 20 次。
+            SoundManager.playSFX("sfx_slot_spin")
+            repeat(StorePageRenderer.BULK_SPIN_COUNT) {
+                handleSlotSpin(announce = false, fromBulk = true)
+                if (!state.isSpinning) return@repeat
+                completeSpin(System.currentTimeMillis(), announce = false)
+                totalYen += state.spinResultYen
+                if (state.spinResultUpgrade != null) upgrades++
+                if (state.spinResultSymbol == StorePageRenderer.SYM_ROCKET) jackpots++
+                completed++
+            }
+        } finally {
+            state.isBulkSpinning = false
+        }
+
+        // 理论上不会少抽：余额已锁定，且 20 次结算在当前线程一次跑完。真被中断时也按实际完成
+        // 的次数汇总，已经结算的每一次都各自扣过费、发过奖。
+        if (completed == 0) return
+        // 20 条赌场记录在内存里攒好，这里只写一次盘；逐条写会把 UI 线程按在磁盘上 20 次。
+        telemetryManager.flush()
+        state.bulkSpinCount = completed
+        state.bulkSpinTotalYen = totalYen
+        state.bulkSpinUpgrades = upgrades
+        state.bulkSpinJackpots = jackpots
+        state.bulkSpinTime = System.currentTimeMillis()
+        // 汇总是最新事件：清掉可能还挂着的按钮反馈，别让几秒前的提示盖住它。
+        state.readoutMessage = null
+        state.readoutMessageTime = 0
+        // 汇总占住结果屏，第 20 抽的单抽结果不再单独闪一遍。
+        state.spinResultTime = 0
+        if (jackpots > 0) SoundManager.playSFX("sfx_slot_jackpot")
+        else if (totalYen > 0) SoundManager.playSFX("sfx_slot_win")
+    }
+
+    /**
      * @param roll the outcome draw. internal with a default so a test can force a jackpot
      *   without spinning until one turns up.
+     * @param announce 播放开转音；20 连抽的内部结算关掉它，改为整批播一次。
+     * @param fromBulk 20 连抽内部调用。其它调用在连抽结算期间一律拒绝，防止插队。
      */
-    internal fun handleSlotSpin(roll: Float = kotlin.random.Random.nextFloat()) {
+    internal fun handleSlotSpin(
+        roll: Float = kotlin.random.Random.nextFloat(),
+        announce: Boolean = true,
+        fromBulk: Boolean = false
+    ) {
+        // 20 连抽结算期间，别的入口（按住自动连抽、Astro 自动赌）不能再开一局。
+        if (!fromBulk && state.isBulkSpinning) return
         if (state.isSpinning) return
-        if (state.actualYen < 100) return
+        if (state.actualYen < SlotOdds.SPIN_COST) return
+        // 新的单抽是更新的结果，不能让还在倒计时的连抽汇总压着它。
+        if (!fromBulk) state.bulkSpinTime = 0
 
         synchronized(upgradeLock) {
-            if (state.actualYen < 100) return
+            if (!fromBulk && state.isBulkSpinning) return
+            if (state.actualYen < SlotOdds.SPIN_COST) return
             // Deduct cost immediately
-            val newYen = state.actualYen - 100
+            val newYen = state.actualYen - SlotOdds.SPIN_COST
             persistence.setYen(newYen)
             state.actualYen = newYen
         }
@@ -3362,11 +3458,11 @@ class HangarSurfaceView(
         state.spinResultSymbol = symbol
         state.spinResultTime = 0  // Set when animation completes
         state.isSpinning = true
-        SoundManager.playSFX("sfx_slot_spin")
+        if (announce) SoundManager.playSFX("sfx_slot_spin")
         persistence.incrementCasinoSpins()
 
         val symbolNames = state.reelValues.map { StorePageRenderer.getSymbolName(it) }
-        telemetryManager.logCasinoSpin(symbolNames, yenPayout, state.actualYen)
+        telemetryManager.logCasinoSpin(symbolNames, yenPayout, state.actualYen, save = !fromBulk)
     }
 
     /**
@@ -3685,6 +3781,12 @@ class HangarSurfaceView(
         state.pendingSpinUpgradeId = null
         state.spinResultSymbol = -1
         state.spinResultTime = 0
+        state.isBulkSpinning = false
+        state.bulkSpinTime = 0
+        state.bulkSpinCount = 0
+        state.bulkSpinTotalYen = 0
+        state.bulkSpinUpgrades = 0
+        state.bulkSpinJackpots = 0
 
         // Reset ship drag
         state.isDraggingShip = false

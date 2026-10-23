@@ -93,6 +93,8 @@ class HangarRenderer(private val persistence: PersistenceManager) {
     val upgradeRects get() = storePageRenderer.upgradeRects
     val storeButtonRects get() = storePageRenderer.storeButtonRects
     val spinButtonRect get() = storePageRenderer.spinButtonRect
+    /** 右侧 20 连抽按钮的命中矩形；柜机模式下为空。 */
+    val bulkSpinButtonRect get() = storePageRenderer.bulkSpinButtonRect
     val crystalTileRect get() = storePageRenderer.crystalTileRect
     val codexBookRect get() = barPageRenderer.codexBookRect
     internal val pilotCardRects get() = barPageRenderer.pilotCardRects

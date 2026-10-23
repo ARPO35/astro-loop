@@ -127,7 +127,11 @@ class TelemetryManager(context: Context) {
         saveToDisk()
     }
 
-    fun logCasinoSpin(result: List<String>, payout: Int, yenAfter: Int) {
+    /**
+     * @param save 立即落盘。20 连抽要把 20 条记录一次写进去，内部逐条传 false，
+     *   结算完由调用方 [flush] 一次，避免在 UI 线程上同步写 20 次文件。
+     */
+    fun logCasinoSpin(result: List<String>, payout: Int, yenAfter: Int, save: Boolean = true) {
         val entry = JSONObject().apply {
             put("time", dateFormat.format(Date()))
             put("reels", JSONArray(result))
@@ -135,7 +139,7 @@ class TelemetryManager(context: Context) {
             put("yenAfter", yenAfter)
         }
         casinoSpins.add(entry)
-        saveToDisk()
+        if (save) saveToDisk()
     }
 
     fun clearLog() {

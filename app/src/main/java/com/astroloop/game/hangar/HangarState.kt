@@ -329,6 +329,8 @@ class HangarState(internal val persistence: PersistenceManager) {
 
     // --- Slot machine (store page) ---
     @Volatile var isSpinning: Boolean = false
+    /** 20 连抽批结算标记：期间拒绝单抽、按住自动连抽和 Astro 自动赌插队。 */
+    @Volatile var isBulkSpinning: Boolean = false
     var reelValues: IntArray = IntArray(3)          // Target symbol index per reel
     var reelStopTimes: LongArray = LongArray(3)     // Stagger timestamps
     @Volatile var spinResultYen: Int = 0            // Payout amount for display
@@ -340,6 +342,15 @@ class HangarState(internal val persistence: PersistenceManager) {
     @Volatile var spinResultSymbol: Int = -1         // Symbol that landed (SYM_* constant)
     @Volatile var spinResultTime: Long = 0          // When result landed (for fade-out)
     @Volatile var reelPhases: FloatArray = FloatArray(3) // Animation scroll offset per reel
+
+    // --- Slot machine 20 连抽汇总 ---
+    // 20 连抽一次结算完 20 抽，单抽字段只会留下最后一次的结果，所以汇总单独记。结果屏在
+    // bulkSpinTime 起的几秒内优先展示这份汇总；为 0 表示没有可展示的汇总。
+    @Volatile var bulkSpinTime: Long = 0
+    @Volatile var bulkSpinCount: Int = 0
+    @Volatile var bulkSpinTotalYen: Int = 0
+    @Volatile var bulkSpinUpgrades: Int = 0
+    @Volatile var bulkSpinJackpots: Int = 0
 
     // --- TB-26 bartender bar movement ---
     @Volatile var tb26BarX: Float = 0f
@@ -601,6 +612,8 @@ class HangarState(internal val persistence: PersistenceManager) {
         readoutMessage = text
         readoutMessageTime = System.currentTimeMillis()
         spinResultTime = 0L
+        // 和单抽结果一样：消息已经把屏幕占满，消息退场后不该再闪回一份旧汇总。
+        bulkSpinTime = 0L
     }
 
     // --- Fade from black (corruption death return) ---

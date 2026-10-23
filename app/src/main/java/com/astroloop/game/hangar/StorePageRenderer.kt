@@ -1112,6 +1112,11 @@ class StorePageRenderer(
         const val SYM_WRENCH = 5
         const val SYMBOL_COUNT = 6
 
+        /** 一次 20 连抽结算的抽数。 */
+        const val BULK_SPIN_COUNT = 20
+        /** 20 连抽一次性扣的总价：20 × 单抽价，无批量折扣。单抽价来自 [SlotOdds.SPIN_COST]。 */
+        const val BULK_SPIN_COST = SlotOdds.SPIN_COST * BULK_SPIN_COUNT
+
         private val SYMBOL_NAMES = arrayOf("yen", "star", "diamond", "rocket", "bolt", "gear")
         fun getSymbolName(index: Int): String = SYMBOL_NAMES.getOrElse(index) { "?" }
 
@@ -1133,6 +1138,13 @@ class StorePageRenderer(
     }
 
     var spinButtonRect = RectF()
+    /**
+     * 右侧 20 连抽按钮的命中矩形；单抽按钮仍是 [spinButtonRect]。
+     *
+     * 与 [spinButtonRect] 同高、同行，中间留一条缝。柜机模式（BELT RUN）没有 20 连抽，
+     * 那里保持空矩形，单抽/投币按钮也仍是原来那一整块。
+     */
+    var bulkSpinButtonRect = RectF()
 
     /**
      * Retract every tap rect the room's machine publishes, for the frames it draws no machine.
@@ -1162,6 +1174,7 @@ class StorePageRenderer(
     private fun clearRoomStoreRects(state: HangarState) {
         storeButtonRects.clear()
         spinButtonRect = RectF()
+        bulkSpinButtonRect = RectF()
         state.hatchRect = null
         state.paperRect = null
         state.audioMuteButtonRect = null
@@ -1380,10 +1393,26 @@ class StorePageRenderer(
 
         val buttonTop = resultBottom + gap
         val buttonBottom = buttonTop + boxHeight
-        val buttonRect = RectF(resultLeft, buttonTop, resultRight, buttonBottom)
 
-        spinButtonRect = buttonRect
-        storeButtonRects.add(buttonRect)
+        // 老虎机把原来的一整颗按钮一分为二：左单抽、右 20 连抽，高度和行位置都不动。
+        // 中间这条缝既是视觉分隔，也保证两个命中矩形绝不重叠——触摸和焦点都靠它区分左右。
+        // 柜机（BELT RUN）没有 20 连抽，仍保持原来一整颗 INSERT COIN 按钮。
+        val buttonGap = (buttonWidth * 0.06f).coerceIn(4f, 10f)
+        val singleButtonRect = if (isCabinet) {
+            RectF(resultLeft, buttonTop, resultRight, buttonBottom)
+        } else {
+            RectF(resultLeft, buttonTop, resultLeft + (buttonWidth - buttonGap) / 2f, buttonBottom)
+        }
+        val bulkButtonRect = if (isCabinet) {
+            RectF()
+        } else {
+            RectF(singleButtonRect.right + buttonGap, buttonTop, resultRight, buttonBottom)
+        }
+
+        spinButtonRect = singleButtonRect
+        bulkSpinButtonRect = bulkButtonRect
+        storeButtonRects.add(singleButtonRect)
+        if (!isCabinet) storeButtonRects.add(bulkButtonRect)
 
         // --- CRT Result Screen ---
         // Hoisted out of the branch below: the spin button's label (unconditional, further down)
@@ -1437,6 +1466,8 @@ class StorePageRenderer(
             else -> 3000L
         }
         val fadeDuration = 1000L
+        // 20 连抽汇总停留得比单抽久一点，够玩家读完金额和附带的升级/jackpot。
+        val bulkDuration = if (state.bulkSpinJackpots > 0) 6000L else 4500L
 
         // Button feedback takes the readout outright. Drawn before the spin-result branch on
         // purpose: the ordering IS the rule, so there is no condition to keep in sync.
@@ -1453,6 +1484,65 @@ class StorePageRenderer(
             textPaint.alpha = (messageFade * 255).toInt()
             // No slot symbol, so the text is plainly centred and has the full box width.
             canvas.drawText(message, resultRect.centerX(), resultRect.centerY() + fontSize * 0.15f, textPaint)
+            textPaint.alpha = 255
+        } else if (state.bulkSpinTime > 0 && time - state.bulkSpinTime < bulkDuration) {
+            // 20 连抽汇总：两行装下“抽了几次 / 赢了多少”。升级和 jackpot 与金额轮流显示，
+            // 结果框只有一颗按钮那么高，塞第三行会挤出边框；总额是主信息，所以它占多数时间。
+            val bulkAge = time - state.bulkSpinTime
+            val fadeAlpha =
+                if (bulkAge > bulkDuration - fadeDuration) ((bulkDuration - bulkAge) / fadeDuration.toFloat()) else 1f
+
+            if (state.bulkSpinJackpots > 0) {
+                // 和单抽 jackpot 同一套金色呼吸灯，告诉玩家这 20 抽里出过货。
+                val pulse = (0.7f + 0.3f * sin(bulkAge * 0.008f).toFloat())
+                fillPaint.color = 0xFFFFAA22.toInt()
+                fillPaint.alpha = (fadeAlpha * pulse * 40).toInt()
+                canvas.drawRoundRect(
+                    RectF(resultLeft - 6f, resultTop - 6f, resultRight + 6f, resultBottom + 6f),
+                    8f, 8f, fillPaint
+                )
+                fillPaint.alpha = 255
+            }
+
+            textPaint.textSize = fontSize
+            textPaint.color = if (state.bulkSpinJackpots > 0) 0xFFFFAA22.toInt() else 0xFFFFDD88.toInt()
+            textPaint.alpha = (fadeAlpha * 255).toInt()
+            canvas.drawText(
+                "${state.bulkSpinCount} SPINS",
+                resultRect.centerX(), resultRect.centerY() - fontSize * 0.15f, textPaint
+            )
+
+            val extras = mutableListOf<String>()
+            if (state.bulkSpinUpgrades > 0) {
+                extras += "${state.bulkSpinUpgrades} UPGRADE" +
+                    if (state.bulkSpinUpgrades == 1) "" else "S"
+            }
+            if (state.bulkSpinJackpots > 0) {
+                extras += "${state.bulkSpinJackpots} JACKPOT" +
+                    if (state.bulkSpinJackpots == 1) "" else "S"
+            }
+            val showExtras = extras.isNotEmpty() &&
+                (state.bulkSpinTotalYen <= 0 || (bulkAge / 1800L) % 2L == 1L)
+            val secondLine = when {
+                showExtras -> extras.joinToString(" \u00B7 ")
+                state.bulkSpinTotalYen > 0 -> "+${state.bulkSpinTotalYen}\u00A5"
+                else -> "NO LUCK"
+            }
+            textPaint.color = when {
+                showExtras -> 0xFFFFDD88.toInt()
+                state.bulkSpinTotalYen > 0 -> 0xFFFFFFFF.toInt()
+                else -> 0xFF888888.toInt()
+            }
+            // 汇总比单抽文字长，窄屏上按结果框宽度等比缩一下，避免“· 2 JACKPOTS”探出边框。
+            textPaint.textSize = fontSize
+            val secondMaxWidth = (resultRect.width() - 8f).coerceAtLeast(1f)
+            val secondMeasured = textPaint.measureText(secondLine)
+            if (secondMeasured > secondMaxWidth) {
+                textPaint.textSize = (fontSize * secondMaxWidth / secondMeasured).coerceAtLeast(8f)
+            }
+            canvas.drawText(
+                secondLine, resultRect.centerX(), resultRect.centerY() + fontSize * 0.95f, textPaint
+            )
             textPaint.alpha = 255
         } else if (state.spinResultTime > 0 && resultAge < resultDuration) {
             val fadeAlpha = if (resultAge > resultDuration - fadeDuration) ((resultDuration - resultAge) / fadeDuration.toFloat()) else 1f
@@ -1583,21 +1673,37 @@ class StorePageRenderer(
         }
 
         // --- Spin Button ---
-        // A credit already banked is spendable whatever the wallet says — you can walk
-        // out of the cabinet without playing, and then the coin is already in the machine.
-        // isCabinet-gated, so the slot machine's own enabled state is unchanged.
+        // 老虎机画两颗：左单抽、右 20 连抽；柜机仍画一整颗投币/开始按钮。两者共用同一段灯框
+        // 逻辑，只是余额门槛不同。20 连抽的按钮上始终写着总价——余额不够时它会变灰，但价格
+        // 不能被 NO ¥ 顶掉，否则玩家看不到自己在攒什么。
         val hasBankedCredit = isCabinet && persistence.getCabinetCredits() > 0
-        val canSpin = !state.isSpinning && (state.actualYen >= 100 || hasBankedCredit)
-        fillPaint.color = if (canSpin) 0xFF2A2A40.toInt() else 0xFF1A1A24.toInt()
-        canvas.drawRoundRect(buttonRect, 4f, 4f, fillPaint)
-        linePaint.color = if (canSpin) 0xFFCC8844.toInt() else 0xFF333344.toInt()
-        linePaint.strokeWidth = 1.5f
-        canvas.drawRoundRect(buttonRect, 4f, 4f, linePaint)
 
-        textPaint.textSize = fontSize
-        textPaint.color = if (canSpin) 0xFFFFDD88.toInt() else 0xFF555555.toInt()
-        val buttonLabel = if (isCabinet) {
-            when {
+        fun drawButtonFace(rect: RectF, enabled: Boolean, label: String) {
+            fillPaint.color = if (enabled) 0xFF2A2A40.toInt() else 0xFF1A1A24.toInt()
+            fillPaint.alpha = 255
+            canvas.drawRoundRect(rect, 4f, 4f, fillPaint)
+            linePaint.color = if (enabled) 0xFFCC8844.toInt() else 0xFF333344.toInt()
+            linePaint.strokeWidth = 1.5f
+            linePaint.alpha = 255
+            canvas.drawRoundRect(rect, 4f, 4f, linePaint)
+
+            textPaint.alpha = 255
+            textPaint.textSize = fontSize
+            textPaint.color = if (enabled) 0xFFFFDD88.toInt() else 0xFF555555.toInt()
+            // 按钮只有原来一半宽：长标签按可用宽度等比缩字，宁可小一点也不让字压出边框。
+            val maxTextWidth = (rect.width() - 8f).coerceAtLeast(1f)
+            val measured = textPaint.measureText(label)
+            if (measured > maxTextWidth) {
+                textPaint.textSize = (fontSize * maxTextWidth / measured).coerceAtLeast(8f)
+            }
+            canvas.drawText(label, rect.centerX(), rect.centerY() + textPaint.textSize * 0.35f, textPaint)
+        }
+
+        if (isCabinet) {
+            // A credit already banked is spendable whatever the wallet says — you can walk
+            // out of the cabinet without playing, and then the coin is already in the machine.
+            val canSpin = !state.isSpinning && (state.actualYen >= SlotOdds.SPIN_COST || hasBankedCredit)
+            val buttonLabel = when {
                 // Holding a credit, pressing this costs nothing — the tap handler checks
                 // credits before it ever reaches takeCoin(). Saying INSERT COIN here was a
                 // lie that read as a double charge: you pressed expecting to pay, then saw
@@ -1607,14 +1713,25 @@ class StorePageRenderer(
                 // lets the SCREEN say "press start". Writing the verb on the thing you
                 // press is the tell that the phrase came off the wrong surface.
                 hasBankedCredit -> "START"
-                state.actualYen < 100 && !state.isSpinning -> "NO \u00A5"
-                else -> "INSERT COIN \u2014 100\u00A5"
+                state.actualYen < SlotOdds.SPIN_COST && !state.isSpinning -> "NO \u00A5"
+                else -> "INSERT COIN \u2014 ${SlotOdds.SPIN_COST}\u00A5"
             }
+            drawButtonFace(singleButtonRect, canSpin, buttonLabel)
+            state.insertCoinRect = RectF(singleButtonRect)
         } else {
-            if (state.actualYen < 100 && !state.isSpinning) "NO \u00A5" else "SPIN \u2014 100\u00A5"
+            drawButtonFace(
+                singleButtonRect,
+                !state.isSpinning && state.actualYen >= SlotOdds.SPIN_COST,
+                if (state.actualYen < SlotOdds.SPIN_COST && !state.isSpinning) "NO \u00A5"
+                else "SPIN \u2014 ${SlotOdds.SPIN_COST}\u00A5"
+            )
+            drawButtonFace(
+                bulkButtonRect,
+                !state.isSpinning && state.actualYen >= BULK_SPIN_COST,
+                "${BULK_SPIN_COUNT}\u00D7 \u2014 ${BULK_SPIN_COST}\u00A5"
+            )
+            state.insertCoinRect = null
         }
-        canvas.drawText(buttonLabel, buttonRect.centerX(), buttonRect.centerY() + fontSize * 0.35f, textPaint)
-        state.insertCoinRect = if (isCabinet) RectF(buttonRect) else null
 
         // --- Payout table (right panel) ---
         val payoutLeft = machineRight - rightPanelWidth + 4f
