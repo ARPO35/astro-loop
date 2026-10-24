@@ -206,7 +206,7 @@ lingering_nova.rate default=1.0 min=0.5 max=1.0 EvoRateKnob LIVE "Weapons/Linger
 lucky_star.drop_bonus default=0.5 min=0.05 max=5.0 FloatKnob ON_EDITOR_CLOSE "Passives/Lucky Star"
 magnet_field.range_per_stack default=0.3 min=0.030000001 max=3.0 FloatKnob ON_EDITOR_CLOSE "Passives/Magnet Field"
 momentum_drive.damage_per_stack default=0.15 min=0.015000001 max=1.5 FloatKnob ON_EDITOR_CLOSE "Passives/Momentum Drive"
-nano_repair.regen_per_stack default=0.6 min=0.03 max=3.0 FloatKnob ON_EDITOR_CLOSE "Passives/Nano Repair"
+nano_repair.regen_per_stack default=0.3 min=0.03 max=3.0 FloatKnob ON_EDITOR_CLOSE "Passives/Nano Repair"
 needle_gun.cooldown default=2.0 min=1.0 max=32.0 SixteenthsKnob LIVE "Weapons/Needle Gun"
 needle_gun.count default=1.0 min=1.0 max=12.0 IntKnob LIVE "Weapons/Needle Gun"
 needle_gun.count_growth default=1.0 min=0.0 max=10.0 IntKnob LIVE "Weapons/Needle Gun"

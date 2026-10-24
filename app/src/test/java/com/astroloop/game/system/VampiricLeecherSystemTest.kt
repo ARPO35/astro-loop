@@ -112,6 +112,60 @@ class VampiricLeecherSystemTest {
     }
 
     @Test
+    fun `full health converts half the leech into shields`() {
+        state.addPassive("vampiric_core")  // leech = 0.2 per asteroid
+        ship.health = ship.maxHealth
+        ship.currentShield = 0f
+        val asteroid = inRangeAsteroid()
+
+        system.update(ship, listOf(asteroid), state, 0.21f)
+
+        assertEquals(100f, ship.health, 0.001f)
+        assertEquals(0.1f, ship.currentShield, 0.001f)
+        assertEquals(49.8f, asteroid.health, 0.001f)
+    }
+
+    @Test
+    fun `shield conversion stops at the shield ceiling`() {
+        state.addPassive("vampiric_core")
+        ship.health = ship.maxHealth
+        ship.currentShield = 49.95f
+        val asteroid = inRangeAsteroid()
+
+        system.update(ship, listOf(asteroid), state, 0.21f)
+
+        assertEquals(50f, ship.currentShield, 0.001f)
+        assertEquals(49.8f, asteroid.health, 0.001f)
+    }
+
+    @Test
+    fun `glass cannon prevents leech from reaching shields`() {
+        state.addPassive("vampiric_core")
+        ship.health = ship.maxHealth
+        ship.currentShield = 0f
+        ship.shieldCap = 0f
+        ship.shieldRegenDisabled = true
+        val asteroid = inRangeAsteroid()
+
+        system.update(ship, listOf(asteroid), state, 0.21f)
+
+        assertEquals(0f, ship.currentShield, 0.001f)
+        assertEquals(50f, asteroid.health, 0.001f)
+    }
+
+    @Test
+    fun `missing health heals health at full rate instead of shields`() {
+        state.addPassive("vampiric_core")
+        ship.currentShield = 0f
+        val asteroid = inRangeAsteroid()
+
+        system.update(ship, listOf(asteroid), state, 0.21f)
+
+        assertEquals(50.2f, ship.health, 0.001f)
+        assertEquals(0f, ship.currentShield, 0.001f)
+    }
+
+    @Test
     fun `asteroid killed by leech triggers callback`() {
         // The system no longer deactivates the asteroid itself (see VampiricTargetCapTest /
         // Asteroid.claimDestruction) - that's the callback's job, mirroring production's

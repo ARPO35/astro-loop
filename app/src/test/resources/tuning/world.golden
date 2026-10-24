@@ -98,11 +98,11 @@ field m=19.5 astro=false difficulty=-1.0133753 count=1 speed=-3.9774983 hp=1.0 d
 field m=19.5 astro=true difficulty=8.6 count=3 speed=7.0 hp=7.3360324 dmg=69.0
 field m=20.0 astro=false difficulty=-1.4800014 count=1 speed=-5.920006 hp=1.0 dmg=0.0
 field m=20.0 astro=true difficulty=8.8 count=3 speed=7.0 hp=8.0 dmg=72.0
-passive nano_repair x1 dmg=1.0 regen=0.6 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x2 dmg=1.0 regen=1.2 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x3 dmg=1.0 regen=1.8000001 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x4 dmg=1.0 regen=2.4 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
-passive nano_repair x5 dmg=1.0 regen=3.0 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x1 dmg=1.0 regen=0.3 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x2 dmg=1.0 regen=0.6 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x3 dmg=1.0 regen=0.90000004 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x4 dmg=1.0 regen=1.2 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
+passive nano_repair x5 dmg=1.0 regen=1.5 pickup=1.0 extraProj=0 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x1 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x2 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false
 passive duplicator_core x3 dmg=1.0 regen=0.0 pickup=1.0 extraProj=1 lives=0 drones=0 momentum=0.0 cryo=0.0/1.0/100.0 dropRate=1.0 shieldCap=3.4028235E38 shieldRegenOff=false

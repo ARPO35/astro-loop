@@ -16,7 +16,7 @@ import com.astroloop.game.system.VampiricLeecherSystem
 object KnobsPassives {
     private val nano = KnobGroup("Passives/Nano Repair", "nano_repair")
     val nanoRegenPerStack = nano.float(
-        "regen_per_stack", "Regen per stack (HP/s)", 0.6f,
+        "regen_per_stack", "Regen per stack (HP/s)", 0.3f,
         min = 0.03f, max = 3f, applies = Applies.ON_EDITOR_CLOSE,
     )
 

@@ -1,5 +1,6 @@
 package com.astroloop.game.system
 
+import com.astroloop.game.core.GameConfig
 import com.astroloop.game.core.GameState
 import com.astroloop.game.entity.Asteroid
 import com.astroloop.game.entity.LeechParticle
@@ -174,7 +175,12 @@ class VampiricLeecherSystem(
     }
 
     private fun tick(ship: Ship, asteroids: List<Asteroid>, stacks: Int) {
-        if (ship.health >= ship.maxHealth) return
+        val healingHealth = ship.health < ship.maxHealth
+        val shieldCeiling = minOf(ship.maxShield, ship.shieldCap)
+        // 生命已满时改为吸护盾：按吸血量的一半转化，且不能绕过 Glass Cannon。
+        val healingShield = !healingHealth && !ship.shieldRegenDisabled &&
+            ship.currentShield < shieldCeiling
+        if (!healingHealth && !healingShield) return
 
         val leech = KnobsPassives.vampiricLeech.value
         var totalHeal = 0f
@@ -189,7 +195,12 @@ class VampiricLeecherSystem(
         }
 
         if (totalHeal > 0f) {
-            ship.health = (ship.health + totalHeal).coerceAtMost(ship.maxHealth)
+            if (healingHealth) {
+                ship.health = (ship.health + totalHeal).coerceAtMost(ship.maxHealth)
+            } else {
+                ship.currentShield = (ship.currentShield +
+                    totalHeal * GameConfig.VAMPIRIC_SHIELD_LEECH_FACTOR).coerceAtMost(shieldCeiling)
+            }
         }
     }
 

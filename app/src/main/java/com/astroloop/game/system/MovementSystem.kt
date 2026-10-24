@@ -32,10 +32,21 @@ class MovementSystem {
         // Ship can now move freely - camera follows ship
         // No position clamping
 
-        // Health regeneration
-        if (state.healthRegen > 0 && ship.health < ship.maxHealth) {
-            ship.health = (ship.health + state.healthRegen * deltaTime)
-                .coerceAtMost(ship.maxHealth)
+        // Nano Repair：回血的同时按一半速度回复护盾。
+        // 护盾上限要同时受 maxShield 与 shieldCap 约束，否则 Glass Cannon 会把护盾加回来。
+        if (state.healthRegen > 0f) {
+            if (ship.health < ship.maxHealth) {
+                ship.health = (ship.health + state.healthRegen * deltaTime)
+                    .coerceAtMost(ship.maxHealth)
+            }
+            if (!ship.shieldRegenDisabled) {
+                val shieldCeiling = minOf(ship.maxShield, ship.shieldCap)
+                if (ship.currentShield < shieldCeiling) {
+                    ship.currentShield = (ship.currentShield +
+                        state.healthRegen * GameConfig.NANO_REPAIR_SHIELD_REGEN_FACTOR * deltaTime)
+                        .coerceAtMost(shieldCeiling)
+                }
+            }
         }
 
     }

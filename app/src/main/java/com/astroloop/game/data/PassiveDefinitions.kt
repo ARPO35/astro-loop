@@ -13,8 +13,8 @@ object PassiveDefinitions {
         PassiveDef(
             id = "nano_repair",
             name = "Nano Repair",
-            description = "Regenerates health over time",
-            effectPerStack = "+0.6 HP/sec"
+            description = "Regenerates health and shields",
+            effectPerStack = "+0.3 HP/sec\n+0.15 shield/sec"
         ),
         PassiveDef(
             id = "duplicator_core",
@@ -80,7 +80,7 @@ object PassiveDefinitions {
             id = "vampiric_core",
             name = "Vampiric Core",
             description = "Drain life from nearby asteroids",
-            effectPerStack = "+20 drain range"
+            effectPerStack = "+20 drain range\n0.5x leech to shields\nwhen health is full"
         ),
         PassiveDef(
             id = "glass_cannon",

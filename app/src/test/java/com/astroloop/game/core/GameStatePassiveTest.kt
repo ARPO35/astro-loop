@@ -21,17 +21,17 @@ class GameStatePassiveTest {
     // ─── Nano Repair ───────────────────────────────────────────
 
     @Test
-    fun `nano_repair adds 0_6 health regen per stack`() {
+    fun `nano_repair adds 0_3 health regen per stack`() {
         assertEquals(0f, state.healthRegen, 0.001f)
+
+        state.addPassive("nano_repair")
+        assertEquals(0.3f, state.healthRegen, 0.001f)
 
         state.addPassive("nano_repair")
         assertEquals(0.6f, state.healthRegen, 0.001f)
 
-        state.addPassive("nano_repair")
-        assertEquals(1.2f, state.healthRegen, 0.001f)
-
         repeat(3) { state.addPassive("nano_repair") }
-        assertEquals(3.0f, state.healthRegen, 0.001f)
+        assertEquals(1.5f, state.healthRegen, 0.001f)
     }
 
     // ─── Duplicator Core ───────────────────────────────────────
@@ -293,11 +293,11 @@ class GameStatePassiveTest {
 
     @Test
     fun `multiple different passives combine correctly`() {
-        state.addPassive("nano_repair")       // +0.6 regen
+        state.addPassive("nano_repair")       // +0.3 regen
         state.addPassive("duplicator_core")   // instant-max: +1 proj (binary effect)
         state.addPassive("glass_cannon")      // instant-max: +100% dmg, shields disabled
 
-        assertEquals(0.6f, state.healthRegen, 0.001f)
+        assertEquals(0.3f, state.healthRegen, 0.001f)
         assertEquals(1, state.extraProjectiles)
         assertEquals(2.00f, state.damageMultiplier, 0.001f)  // 1.0 + 1.0
         assertEquals(0f, state.maxShieldCap, 0.001f)
@@ -309,8 +309,8 @@ class GameStatePassiveTest {
     fun `passives cannot exceed max stacks`() {
         repeat(10) { state.addPassive("nano_repair") }
 
-        // Should cap at 5 stacks = 3.0 regen
-        assertEquals(3.0f, state.healthRegen, 0.001f)
+        // Should cap at 5 stacks = 1.5 regen
+        assertEquals(1.5f, state.healthRegen, 0.001f)
         assertEquals(5, state.getPassiveStacks("nano_repair"))
     }
 

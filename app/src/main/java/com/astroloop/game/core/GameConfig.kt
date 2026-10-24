@@ -15,6 +15,10 @@ object GameConfig {
     const val SHIP_BASE_SHIELDS = 50f
     const val SHIELD_REGEN_RATE = 1.0f
     const val SHIELD_REGEN_DELAY = 2f
+    /** Nano Repair 按自身回血速度的这个比例额外恢复护盾。 */
+    const val NANO_REPAIR_SHIELD_REGEN_FACTOR = 0.5f
+    /** Vampiric Core 在生命值已满时，按吸血量的这个比例转化为护盾。 */
+    const val VAMPIRIC_SHIELD_LEECH_FACTOR = 0.5f
     const val SHIP_BASE_SIZE = 25f
     const val SHIP_ACCELERATION = 800f
     const val SHIP_DECELERATION = 400f
